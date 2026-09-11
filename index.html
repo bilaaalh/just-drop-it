@@ -1,0 +1,3254 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Just Drop It — Measuring the water you never needed to measure</title>
+  <meta name="description" content="The world's premier over-engineered liquid displacement estimator for hackathon 2026. Calculate the water displaced by dropped objects with completely unnecessary precision." />
+  
+  <!-- Google Fonts: Inter, Outfit, JetBrains Mono, Cinzel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Outfit', 'sans-serif'],
+            serif: ['Cinzel', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          animation: {
+            'float-slow': 'float 5s ease-in-out infinite',
+            'wave-slow': 'wave 6s linear infinite',
+            'spin-slow': 'spin 20s linear infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            wave: {
+              '0%': { transform: 'translateX(0)' },
+              '100%': { transform: 'translateX(-50%)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, ReactDOM, Babel for TSX, Canvas-Confetti -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <style>
+    body {
+      background-color: #000000;
+      color: #f4f4f5;
+      overflow-x: hidden;
+    }
+
+    /* Stark Minimal Panels */
+    .lab-panel {
+      background: #09090b;
+      border: 1px solid #27272a;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.7);
+    }
+
+    .lab-panel-hover {
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .lab-panel-hover:hover {
+      border-color: #52525b;
+      transform: translateY(-2px);
+    }
+
+    /* Pure Black and White Button */
+    .btn-primary {
+      background-color: #ffffff;
+      color: #000000;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+    .btn-primary:hover {
+      background-color: #e4e4e7;
+      transform: translateY(-1px);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Minimal Outline Secondary Button */
+    .btn-secondary {
+      background-color: #18181b;
+      border: 1px solid #27272a;
+      color: #f4f4f5;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background-color: #27272a;
+      border-color: #3f3f46;
+      color: #ffffff;
+    }
+
+    /* Technical Monochrome Grid Background */
+    .tech-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #52525b;
+    }
+
+    /* Hacked Lockdown Screen FX */
+    .hacked-scanlines {
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 0, 0, 0) 50%,
+        rgba(0, 0, 0, 0.6) 50%
+      );
+      background-size: 100% 4px;
+    }
+    @keyframes hacked-glitch {
+      0% { transform: translate(0); text-shadow: -2px 0 red, 2px 0 cyan; }
+      20% { transform: translate(-3px, 2px); text-shadow: 2px 0 red, -2px 0 cyan; }
+      40% { transform: translate(3px, -2px); text-shadow: -2px 0 cyan, 2px 0 red; }
+      60% { transform: translate(-2px, -1px); text-shadow: 2px 0 red, -2px 0 cyan; }
+      80% { transform: translate(2px, 2px); text-shadow: -2px 0 red, 2px 0 cyan; }
+      100% { transform: translate(0); text-shadow: -2px 0 red, 2px 0 cyan; }
+    }
+    .animate-glitch {
+      animation: hacked-glitch 0.25s infinite;
+    }
+    @keyframes hacked-strobe {
+      0%, 100% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+      50% { border-color: rgba(220, 38, 38, 0.2); box-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+    }
+    .animate-strobe {
+      animation: hacked-strobe 0.4s infinite;
+    }
+    /* Cringe Flowers Animations */
+    @keyframes cringe-sway-left {
+      0%, 100% { transform: rotate(-10deg) scale(1); }
+      50% { transform: rotate(10deg) scale(1.15); }
+    }
+    @keyframes cringe-sway-right {
+      0%, 100% { transform: rotate(10deg) scale(1); }
+      50% { transform: rotate(-10deg) scale(1.15); }
+    }
+    @keyframes cringe-glow {
+      0%, 100% { filter: drop-shadow(0 0 20px #f43f5e) drop-shadow(0 0 35px #ec4899); }
+      50% { filter: drop-shadow(0 0 35px #ec4899) drop-shadow(0 0 50px #d946ef); }
+    }
+    .cringe-flower-left {
+      display: inline-flex;
+      animation: cringe-sway-left 1.4s ease-in-out infinite;
+    }
+    .cringe-flower-right {
+      display: inline-flex;
+      animation: cringe-sway-right 1.4s ease-in-out infinite;
+    }
+    .cringe-useless-text {
+      animation: cringe-glow 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="selection:bg-white selection:text-black">
+  <div id="root"></div>
+
+  <!-- React TSX Application -->
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    // --- AUDIO & SOUND FX SYNTHESIZER ---
+    class SoundSynth {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.dropAudio = new Audio('faah.mp3');
+        this.dropAudio.preload = 'auto';
+        this.laughAudio = new Audio('laugh.mp3');
+        this.laughAudio.preload = 'auto';
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Play the uploaded faah.mp3 audio for object drop
+      playFaahDrop() {
+        if (!this.enabled) return;
+        this.init();
+        try {
+          const soundInstance = this.dropAudio ? this.dropAudio.cloneNode() : new Audio('faah.mp3');
+          soundInstance.volume = 1.0;
+          const playPromise = soundInstance.play();
+          if (playPromise && playPromise.catch) {
+            playPromise.catch(() => {
+              if (this.dropAudio) {
+                this.dropAudio.currentTime = 0;
+                this.dropAudio.play().catch(() => {});
+              }
+            });
+          }
+        } catch (e) {
+          try {
+            if (this.dropAudio) {
+              this.dropAudio.currentTime = 0;
+              this.dropAudio.play().catch(() => {});
+            }
+          } catch(err) {}
+        }
+      }
+
+      // Play the uploaded laugh.mp3 audio when dismiss is clicked
+      playLaugh() {
+        if (!this.enabled) return;
+        this.init();
+        try {
+          const soundInstance = this.laughAudio ? this.laughAudio.cloneNode() : new Audio('laugh.mp3');
+          soundInstance.volume = 1.0;
+          const playPromise = soundInstance.play();
+          if (playPromise && playPromise.catch) {
+            playPromise.catch(() => {
+              if (this.laughAudio) {
+                this.laughAudio.currentTime = 0;
+                this.laughAudio.play().catch(() => {});
+              }
+            });
+          }
+        } catch (e) {
+          try {
+            if (this.laughAudio) {
+              this.laughAudio.currentTime = 0;
+              this.laughAudio.play().catch(() => {});
+            }
+          } catch(err) {}
+        }
+      }
+
+      // Master Dispatcher: Plays the uploaded "faah.mp3" audio for all object drops
+      playSpecimenDrop(specimenId, params = {}) {
+        if (!this.enabled) return;
+        this.playFaahDrop();
+      }
+
+      // Other procedural sounds disabled per user preference (only faah.mp3 for specimen drops)
+      playSplashHighTech(power = 1) {}
+      playBloop(size = 1) {}
+      playScanBeep() {}
+    }
+
+    const sound = new SoundSynth();
+
+    // --- SPECIMEN DATA CATALOG ---
+    const SPECIMENS = [
+      {
+        id: 'potato',
+        name: 'The Humble Potato',
+        shortName: 'Potato',
+        icon: '🥔',
+        density: 1.08, // g/cm3
+        defaultRadiusCm: 4.2,
+        shape: 'organic',
+        description: 'Starchy tuber of undeniable scientific majesty.',
+        uselessnessScore: 98.4,
+        confidence: 99.1,
+        funFact: 'Displaces water with 0% remorse and 100% carbohydrate density.'
+      },
+      {
+        id: 'rubber_duck',
+        name: 'Tactical Rubber Duck',
+        shortName: 'Toy Duck',
+        icon: '🦆',
+        density: 0.28,
+        defaultRadiusCm: 4.8,
+        shape: 'sphere',
+        description: 'A buoyant philosopher contemplating Archimedean dread.',
+        uselessnessScore: 99.7,
+        confidence: 94.2,
+        funFact: 'Floats proudly while our sensor algorithms panic calculating meniscus tension.'
+      },
+      {
+        id: 'bowling_ball',
+        name: 'Suborbital Bowling Sphere',
+        shortName: 'Bowling Ball',
+        icon: '🎳',
+        density: 1.35,
+        defaultRadiusCm: 7.2,
+        shape: 'sphere',
+        description: 'Heavy, smooth, and guaranteed to cause severe virtual splash damage.',
+        uselessnessScore: 96.1,
+        confidence: 99.9,
+        funFact: 'Causes maximum kinetic disturbance in our simulated fluid engine.'
+      },
+      {
+        id: 'gold_ingot',
+        name: '24k Pointless Gold Bar',
+        shortName: 'Gold Bar',
+        icon: '🧱',
+        density: 19.3,
+        defaultRadiusCm: 3.5,
+        shape: 'cube',
+        description: 'Sinks with the gravitational arrogance of pure unhedged wealth.',
+        uselessnessScore: 99.2,
+        confidence: 99.8,
+        funFact: 'Archimedes used this in Syracuse to catch a fraudulent goldsmith in 250 BC.'
+      },
+      {
+        id: 'smartphone',
+        name: 'Flagship Glass Slab',
+        shortName: 'Smartphone',
+        icon: '📱',
+        density: 2.1,
+        defaultRadiusCm: 3.8,
+        shape: 'cube',
+        description: 'IP68 water resistant, but strictly NOT void-warranty resistant.',
+        uselessnessScore: 97.9,
+        confidence: 96.5,
+        funFact: 'Calculates the displacement of the phone you could have used to check the weather.'
+      },
+      {
+        id: 'ice_cube',
+        name: 'Quantum Cryo-Cube',
+        shortName: 'Ice Cube',
+        icon: '🧊',
+        density: 0.917,
+        defaultRadiusCm: 3.2,
+        shape: 'cube',
+        description: 'Solid water displacing liquid water. The ultimate ontological redundancy.',
+        uselessnessScore: 100.0,
+        confidence: 98.9,
+        funFact: 'Displaces exactly its own weight in water, which means the water level won’t rise when it melts!'
+      },
+      {
+        id: 'ball',
+        name: 'Championship Football',
+        shortName: 'Sports Ball',
+        icon: '⚽',
+        density: 0.18,
+        defaultRadiusCm: 6.5,
+        shape: 'sphere',
+        description: 'Pressurized sphere of athletic disappointment.',
+        uselessnessScore: 98.0,
+        confidence: 95.0,
+        funFact: 'Displaces mostly air until submerged with brute human force.'
+      },
+      {
+        id: 'potion_bottle',
+        name: 'Glass Elixir Vessel',
+        shortName: 'Flask Bottle',
+        icon: '🍾',
+        density: 1.15,
+        defaultRadiusCm: 4.0,
+        shape: 'cylinder',
+        description: 'Vintage cylindrical container for artisanal displaced droplets.',
+        uselessnessScore: 95.4,
+        confidence: 97.6,
+        funFact: 'Has a 12% probability of making an echoing cork sound upon surface collision.'
+      }
+    ];
+
+    // --- LIQUID TYPES (White and Black Aesthetic) ---
+    const LIQUID_TYPES = [
+      { id: 'water', name: 'Standard H₂O', density: 1.0, color: 'rgba(255, 255, 255, 0.14)', waveColor: '#ffffff', visc: 0.025 },
+      { id: 'heavy_water', name: 'Deuterium Heavy Water', density: 1.11, color: 'rgba(255, 255, 255, 0.22)', waveColor: '#e4e4e7', visc: 0.035 },
+      { id: 'sparkling', name: 'Pressurized Sparkling Fizz', density: 0.98, color: 'rgba(255, 255, 255, 0.10)', waveColor: '#d4d4d8', visc: 0.02 },
+      { id: 'quantum_syrup', name: 'Hyper-Viscous Liquid', density: 1.42, color: 'rgba(255, 255, 255, 0.32)', waveColor: '#a1a1aa', visc: 0.08 }
+    ];
+
+    // ==========================================
+    // 1. NAVIGATION BAR COMPONENT (WITH DYNAMIC ACTIVE LINK TRACKING)
+    // ==========================================
+    const NAV_ITEMS = [
+      { id: '#what-it-does', label: 'Features', code: '01' },
+      { id: '#how-it-works', label: 'Protocol', code: '02' },
+      { id: '#simulator', label: 'Simulator', code: '03' },
+      { id: '#uselessness-meter', label: 'Audit', code: '04' },
+      { id: '#science', label: 'Science', code: '05' },
+      { id: '#benchmarks', label: 'Specimens', code: '06' },
+    ];
+
+    function Navbar({ soundEnabled, setSoundEnabled, onOpenCert }) {
+      const [scrolled, setScrolled] = useState(false);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [activeNav, setActiveNav] = useState(() => window.location.hash || '#simulator');
+
+      useEffect(() => {
+        const handleScroll = () => {
+          setScrolled(window.scrollY > 20);
+          
+          // Auto-detect active section on scroll if within range
+          const sections = NAV_ITEMS.map(item => document.querySelector(item.id)).filter(Boolean);
+          const scrollPos = window.scrollY + 200;
+          for (let i = sections.length - 1; i >= 0; i--) {
+            if (sections[i].offsetTop <= scrollPos) {
+              setActiveNav(`#${sections[i].id}`);
+              break;
+            }
+          }
+        };
+
+        const handleHashChange = () => {
+          if (window.location.hash) {
+            setActiveNav(window.location.hash);
+          }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('hashchange', handleHashChange);
+        return () => {
+          window.removeEventListener('scroll', handleScroll);
+          window.removeEventListener('hashchange', handleHashChange);
+        };
+      }, []);
+
+      const handleNavClick = (id) => {
+        setActiveNav(id);
+        sound.playScanBeep();
+      };
+
+      const triggerConfetti = () => {
+        sound.playScanBeep();
+        if (window.confetti) {
+          window.confetti({
+            particleCount: 50,
+            spread: 50,
+            origin: { y: 0.1, x: 0.85 },
+            colors: ['#ffffff', '#a1a1aa', '#71717a', '#27272a']
+          });
+        }
+      };
+
+      return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+          scrolled ? 'bg-black/90 backdrop-blur-md border-b border-zinc-800 py-3 shadow-lg' : 'bg-transparent py-4'
+        }`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            
+            {/* Logo */}
+            <a 
+              href="#" 
+              onClick={() => setActiveNav('#hero')}
+              className="flex items-center gap-2.5 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-base group-hover:border-zinc-500 transition-colors">
+                💧
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-heading font-black text-base tracking-wide text-white">
+                    JUST DROP IT
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-500 tracking-wider hidden sm:block">
+                  Pointless Displacement Lab
+                </span>
+              </div>
+            </a>
+
+            {/* Desktop Navigation Links (Dynamically Highlighted on Click) */}
+            <div className="hidden md:flex items-center gap-2 text-xs font-mono">
+              {NAV_ITEMS.map((item) => {
+                const isActive = activeNav === item.id;
+                return (
+                  <a
+                    key={item.id}
+                    href={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`transition-all duration-150 rounded-full flex items-center gap-1.5 ${
+                      isActive
+                        ? 'text-white font-semibold bg-zinc-900 border border-zinc-700 px-3 py-1 shadow-sm'
+                        : 'text-zinc-400 hover:text-white px-2.5 py-1 hover:bg-zinc-900/50'
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                    )}
+                    <span>{item.code}. {item.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Top Action Buttons */}
+            <div className="flex items-center gap-2">
+              
+              {/* Sound Audio Toggle */}
+              <button
+                onClick={() => {
+                  sound.enabled = !soundEnabled;
+                  setSoundEnabled(!soundEnabled);
+                  if (!soundEnabled) sound.playScanBeep();
+                }}
+                title={soundEnabled ? 'Mute Audio FX' : 'Enable Audio FX'}
+                className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 hover:text-white hover:border-zinc-700 transition-all flex items-center gap-1"
+              >
+                <span>{soundEnabled ? '🔊' : '🔇'}</span>
+                <span className="hidden sm:inline">{soundEnabled ? 'Sound On' : 'Muted'}</span>
+              </button>
+
+              {/* Hackathon Badge Button */}
+              <button
+                onClick={triggerConfetti}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-800 text-xs font-mono text-zinc-300 bg-zinc-900 hover:bg-zinc-800 transition-colors"
+              >
+                <span>🏆</span>
+                <span>Hackathon '26</span>
+              </button>
+
+              {/* Try Simulator Top CTA */}
+              <a
+                href="#simulator"
+                onClick={() => handleNavClick('#simulator')}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-bold btn-primary flex items-center gap-1.5"
+              >
+                <span>Launch Sim</span>
+                <span>→</span>
+              </a>
+
+              {/* Mobile menu trigger */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 text-sm"
+              >
+                ☰
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu Dropdown (Dynamically Highlighted) */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-2 mx-4 p-4 lab-panel rounded-xl flex flex-col gap-2 text-sm font-mono">
+              {NAV_ITEMS.map((item) => {
+                const isActive = activeNav === item.id;
+                return (
+                  <a
+                    key={item.id}
+                    href={item.id}
+                    onClick={() => {
+                      handleNavClick(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`py-2 px-3 rounded-lg flex items-center justify-between transition-colors ${
+                      isActive
+                        ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                    }`}
+                  >
+                    <span>{item.code}. {item.label}</span>
+                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </nav>
+      );
+    }
+
+    // ==========================================
+    // 2. HERO LANDING SECTION (SCROLL-BASED ANIMATION)
+    // ==========================================
+    const TOTAL_HERO_FRAMES = 123;
+    const getHeroFramePath = (idx) => {
+      const padded = String(idx).padStart(3, '0');
+      return `/images/herosection/ezgif-frame-${padded}.png`;
+    };
+
+    function HeroSection({ onOpenCert }) {
+      const containerRef = useRef(null);
+      const canvasRef = useRef(null);
+      const imagesRef = useRef([]);
+      const [imagesLoaded, setImagesLoaded] = useState(false);
+      const [loadProgress, setLoadProgress] = useState(0);
+      const [currentFrame, setCurrentFrame] = useState(1);
+      const [scrollProgress, setScrollProgress] = useState(0);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const playIntervalRef = useRef(null);
+
+      // Preload all 123 frames
+      useEffect(() => {
+        let loaded = 0;
+        const images = [];
+
+        for (let i = 1; i <= TOTAL_HERO_FRAMES; i++) {
+          const img = new Image();
+          img.src = getHeroFramePath(i);
+          img.onload = () => {
+            loaded++;
+            setLoadProgress(Math.round((loaded / TOTAL_HERO_FRAMES) * 100));
+            if (loaded === 1) {
+              // Draw initial frame immediately
+              drawFrame(1);
+            }
+            if (loaded === TOTAL_HERO_FRAMES) {
+              setImagesLoaded(true);
+            }
+          };
+          img.onerror = () => {
+            loaded++;
+            if (loaded === TOTAL_HERO_FRAMES) {
+              setImagesLoaded(true);
+            }
+          };
+          images.push(img);
+        }
+        imagesRef.current = images;
+
+        return () => {
+          if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+        };
+      }, []);
+
+      // Draw specific frame onto canvas with high-DPI scaling & aspect fit
+      const drawFrame = useCallback((frameIndex) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const img = imagesRef.current[frameIndex - 1];
+        if (!img || !img.complete || img.naturalWidth === 0) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = canvas.clientWidth;
+        const displayHeight = canvas.clientHeight;
+
+        if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+          canvas.width = displayWidth * dpr;
+          canvas.height = displayHeight * dpr;
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+        // Aspect fit calculation (contain with subtle scale)
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const canvasRatio = displayWidth / displayHeight;
+        let renderW, renderH, renderX, renderY;
+
+        if (canvasRatio > imgRatio) {
+          renderH = displayHeight;
+          renderW = displayHeight * imgRatio;
+          renderX = (displayWidth - renderW) / 2;
+          renderY = 0;
+        } else {
+          renderW = displayWidth;
+          renderH = displayWidth / imgRatio;
+          renderX = 0;
+          renderY = (displayHeight - renderH) / 2;
+        }
+
+        ctx.drawImage(img, renderX, renderY, renderW, renderH);
+
+        // Ambient dark radial vignette
+        const radialGrad = ctx.createRadialGradient(
+          displayWidth / 2, displayHeight / 2, Math.min(displayWidth, displayHeight) * 0.25,
+          displayWidth / 2, displayHeight / 2, Math.max(displayWidth, displayHeight) * 0.7
+        );
+        radialGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        radialGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.4)');
+        radialGrad.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+        ctx.fillStyle = radialGrad;
+        ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+        ctx.restore();
+      }, []);
+
+      // Scroll listener to update frame and active stage (Silent - no sound while scrolling)
+      useEffect(() => {
+        const handleScroll = () => {
+          if (isPlaying) return; // scroll driven only when not auto-playing
+          const container = containerRef.current;
+          if (!container) return;
+
+          const rect = container.getBoundingClientRect();
+          const scrollableDistance = rect.height - window.innerHeight;
+          if (scrollableDistance <= 0) return;
+
+          const progress = Math.max(0, Math.min(1, -rect.top / scrollableDistance));
+          setScrollProgress(progress);
+
+          const frameIdx = Math.min(
+            TOTAL_HERO_FRAMES,
+            Math.max(1, Math.floor(progress * (TOTAL_HERO_FRAMES - 1)) + 1)
+          );
+          setCurrentFrame(frameIdx);
+          drawFrame(frameIdx);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', () => drawFrame(currentFrame), { passive: true });
+
+        handleScroll();
+        return () => {
+          window.removeEventListener('scroll', handleScroll);
+          window.removeEventListener('resize', () => drawFrame(currentFrame));
+        };
+      }, [isPlaying, currentFrame, drawFrame]);
+
+      // Auto Play Toggle
+      const toggleAutoPlay = () => {
+        if (isPlaying) {
+          if (playIntervalRef.current) clearInterval(playIntervalRef.current);
+          setIsPlaying(false);
+        } else {
+          setIsPlaying(true);
+          let frame = currentFrame >= TOTAL_HERO_FRAMES ? 1 : currentFrame;
+          playIntervalRef.current = setInterval(() => {
+            frame++;
+            if (frame > TOTAL_HERO_FRAMES) {
+              frame = 1;
+            }
+            const prog = (frame - 1) / (TOTAL_HERO_FRAMES - 1);
+            setScrollProgress(prog);
+            setCurrentFrame(frame);
+            drawFrame(frame);
+          }, 33); // ~30fps
+        }
+      };
+
+      // Helper to jump scroll to simulator
+      const scrollToSimulator = () => {
+        const sim = document.getElementById('simulator');
+        if (sim) sim.scrollIntoView({ behavior: 'smooth' });
+      };
+
+      // Helper to jump scroll to top of hero
+      const restartSequence = () => {
+        if (isPlaying) {
+          clearInterval(playIntervalRef.current);
+          setIsPlaying(false);
+        }
+        const hero = document.getElementById('hero');
+        if (hero) hero.scrollIntoView({ behavior: 'smooth' });
+        setCurrentFrame(1);
+        setScrollProgress(0);
+        drawFrame(1);
+      };
+
+      // Compute dynamic physics parameters based on scroll progress
+      const currentVelocity = (scrollProgress * 14.8).toFixed(1);
+      const currentDisplacement = (scrollProgress * 184.2).toFixed(1);
+      const currentDepth = (scrollProgress * 22.5).toFixed(1);
+
+      return (
+        <section 
+          ref={containerRef} 
+          id="hero" 
+          className="relative min-h-[380vh] bg-black text-white"
+        >
+          {/* Sticky 100vh Fullscreen Viewport */}
+          <div className="sticky top-0 h-screen w-full flex flex-col justify-between overflow-hidden bg-black select-none">
+            
+            {/* Background High-Tech Ambient Grid & Canvas */}
+            <div className="absolute inset-0 tech-grid opacity-30 pointer-events-none"></div>
+
+            {/* 3D Frame Animation Canvas */}
+            <canvas 
+              ref={canvasRef} 
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0"
+            />
+
+            {/* Dark Gradient Vignettes for Perfect Contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/80 pointer-events-none z-[1]"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none z-[1]"></div>
+
+            {/* TOP BAR: Controls */}
+            <div className="relative z-20 pt-20 px-4 sm:px-8 max-w-7xl mx-auto w-full flex items-center justify-end pointer-events-auto">
+              {/* Controls: Auto-Play & Scroll Indicator */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleAutoPlay}
+                  className={`px-3.5 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-2 transition-all backdrop-blur-md ${
+                    isPlaying 
+                      ? 'bg-red-500/20 border-red-500/50 text-red-300 hover:bg-red-500/30' 
+                      : 'bg-zinc-900/90 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:text-white'
+                  }`}
+                  title={isPlaying ? "Pause auto sequence" : "Play drop animation automatically"}
+                >
+                  <span>{isPlaying ? '⏸ PAUSE' : '▶ AUTO PLAY'}</span>
+                </button>
+                <div className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-md text-xs font-mono text-zinc-400 hidden sm:block">
+                  {(scrollProgress * 100).toFixed(0)}% SCROLLED
+                </div>
+              </div>
+            </div>
+
+            {/* PRELOADER BANNER (Shows only during initial burst if images loading) */}
+            {!imagesLoaded && (
+              <div className="absolute top-32 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-xl bg-zinc-900/90 border border-zinc-700 backdrop-blur-md text-xs font-mono text-zinc-300 flex items-center gap-3 shadow-2xl">
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>CACHING HYDRO-FRAMES: {loadProgress}%</span>
+              </div>
+            )}
+
+            {/* CENTER STAGE: DYNAMIC SCROLL-SYNCHRONIZED TEXT OVERLAYS */}
+            <div className="relative z-10 flex-1 flex items-center justify-center max-w-7xl mx-auto px-4 sm:px-8 w-full">
+              
+              {/* STAGE 1: 0% - 24% (HERO LAUNCHPAD) */}
+              <div 
+                className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-700 pointer-events-none ${
+                  scrollProgress < 0.24 
+                    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' 
+                    : 'opacity-0 -translate-y-8 scale-95 pointer-events-none'
+                }`}
+              >
+                <div className="max-w-3xl space-y-6 flex flex-col items-center">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-zinc-800 bg-zinc-950/80 backdrop-blur-md text-zinc-300 text-xs font-mono shadow-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                    <span>THE APEX OF POINTLESS COMPUTING • V3.0</span>
+                  </div>
+
+                  <h1 className="font-heading font-black text-4xl sm:text-6xl md:text-7xl tracking-tight text-white leading-tight drop-shadow-2xl">
+                    JUST DROP IT
+                  </h1>
+
+                  <p className="text-base sm:text-xl font-medium text-zinc-300 max-w-2xl drop-shadow">
+                    “Measuring the water you never needed to measure with quantum precision.”
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button
+                      onClick={scrollToSimulator}
+                      className="px-7 py-3.5 rounded-xl btn-primary text-sm font-bold flex items-center gap-2 shadow-2xl transition-transform hover:scale-105 active:scale-95"
+                    >
+                      <span>🧪 Try the Simulator</span>
+                      <span>→</span>
+                    </button>
+                    <a
+                      href="#what-it-does"
+                      className="px-6 py-3.5 rounded-xl btn-secondary text-sm flex items-center gap-2 font-mono backdrop-blur-md"
+                    >
+                      <span>Explore Features</span>
+                    </a>
+                  </div>
+
+                  {/* Micro stats banner */}
+                  <div className="pt-6 grid grid-cols-3 gap-6 border-t border-zinc-800/80 w-full max-w-lg bg-zinc-950/40 p-4 rounded-2xl backdrop-blur-sm">
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[10px] text-zinc-400 uppercase">Precision</span>
+                      <span className="font-heading font-bold text-base text-zinc-100">99.9%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[10px] text-zinc-400 uppercase">Practical Utility</span>
+                      <span className="font-heading font-bold text-base text-zinc-300">0.00%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[10px] text-zinc-400 uppercase">Cost Per Drop</span>
+                      <span className="font-heading font-bold text-base text-zinc-100">$0.00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STAGE 2: 24% - 50% (KINETIC DESCENT & FLUID DRAG) */}
+              <div 
+                className={`absolute inset-0 flex items-center justify-between pointer-events-none transition-all duration-700 ${
+                  scrollProgress >= 0.24 && scrollProgress < 0.50
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : scrollProgress < 0.24 
+                      ? 'opacity-0 translate-y-8' 
+                      : 'opacity-0 -translate-y-8'
+                }`}
+              >
+                {/* Left Telemetry Card */}
+                <div className="w-full max-w-sm lab-panel p-5 rounded-2xl border border-zinc-800 backdrop-blur-xl bg-zinc-950/80 shadow-2xl space-y-3">
+                  <div className="flex items-center justify-between text-xs font-mono text-zinc-400 border-b border-zinc-800 pb-2">
+                    <span className="text-white font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                      FEATURE 01: DESCENT DYNAMICS
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">ACTIVE</span>
+                  </div>
+                  <h3 className="font-heading font-bold text-xl text-white">Kinetic Water Entry</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Continuous raymarched hydrodynamic drag calculations track the specimen as it accelerates toward the fluid boundary.
+                  </p>
+                  <div className="space-y-2 pt-2 text-xs font-mono">
+                    <div className="flex justify-between py-1 border-b border-zinc-900">
+                      <span className="text-zinc-500">Gravity Vector:</span>
+                      <span className="text-zinc-200">9.806 m/s² [↓]</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-zinc-900">
+                      <span className="text-zinc-500">Descent Velocity:</span>
+                      <span className="text-cyan-300 font-bold">{currentVelocity} m/s</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-zinc-500">Penetration Depth:</span>
+                      <span className="text-white font-bold">{currentDepth} cm</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Visual Reticle Readout */}
+                <div className="hidden lg:flex flex-col items-end gap-3 text-right max-w-xs font-mono text-xs text-zinc-400">
+                  <div className="p-4 rounded-2xl lab-panel border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl space-y-2 shadow-2xl">
+                    <div className="text-[10px] text-zinc-500 uppercase tracking-wider">OPTICAL TRACKER</div>
+                    <div className="text-sm font-bold text-white">SPECIMEN #01: RUSSET POTATO</div>
+                    <div className="text-xs text-zinc-400">Cross-sectional area: 42.8 cm²</div>
+                    <div className="text-xs text-emerald-400 flex items-center justify-end gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      TRAJECTORY LOCKED
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STAGE 3: 50% - 75% (ARCHIMEDEAN DISPLACEMENT DYNAMICS) */}
+              <div 
+                className={`absolute inset-0 flex items-center justify-between pointer-events-none transition-all duration-700 ${
+                  scrollProgress >= 0.50 && scrollProgress < 0.75
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : scrollProgress < 0.50 
+                      ? 'opacity-0 translate-y-8' 
+                      : 'opacity-0 -translate-y-8'
+                }`}
+              >
+                {/* Right Positioned Telemetry */}
+                <div className="hidden lg:block w-72"></div>
+
+                <div className="w-full max-w-md lab-panel p-6 rounded-2xl border border-zinc-800 backdrop-blur-xl bg-zinc-950/85 shadow-2xl space-y-4 ml-auto">
+                  <div className="flex items-center justify-between text-xs font-mono text-zinc-400 border-b border-zinc-800 pb-2">
+                    <span className="text-white font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                      FEATURE 02: VOLUMETRIC DISPLACEMENT
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 font-mono">CALCULATING</span>
+                  </div>
+
+                  <h3 className="font-heading font-bold text-2xl text-white">Archimedes Theorem</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Any object wholly or partially immersed in a fluid is buoyed up by a force equal to the weight of the fluid displaced by the object.
+                  </p>
+
+                  {/* High Tech Formula Card */}
+                  <div className="p-3 rounded-xl bg-black border border-zinc-800 font-mono text-xs text-amber-300 text-center shadow-inner">
+                    V_displaced = (Mass / ρ_liquid) × Ω_useless
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                      <div className="text-[10px] font-mono text-zinc-500 uppercase">Fluid Displaced</div>
+                      <div className="font-heading font-bold text-white text-lg">{currentDisplacement} mL</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                      <div className="text-[10px] font-mono text-zinc-500 uppercase">Buoyant Force</div>
+                      <div className="font-heading font-bold text-amber-400 text-lg">1.81 N</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* STAGE 4: 75% - 100% (EQUILIBRIUM & ACTION HUB) */}
+              <div 
+                className={`absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-700 pointer-events-none ${
+                  scrollProgress >= 0.75 
+                    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' 
+                    : 'opacity-0 translate-y-8 scale-95'
+                }`}
+              >
+                <div className="max-w-2xl w-full lab-panel p-6 sm:p-8 rounded-3xl border border-zinc-700 bg-zinc-950/90 backdrop-blur-2xl shadow-2xl space-y-5">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>SIMULATION COMPLETE • HYDROSTATIC EQUILIBRIUM</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h2 className="font-heading font-black text-3xl sm:text-4xl text-white">
+                      184.2 mL DISPLACED
+                    </h2>
+                    <p className="text-xs sm:text-sm text-zinc-400 font-mono">
+                      Calculation finished with 99.98% certainty and 0.00% purpose.
+                    </p>
+                  </div>
+
+                  {/* Summary Metric Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 py-2">
+                    <div className="p-2.5 rounded-xl bg-black border border-zinc-800">
+                      <div className="text-[9px] font-mono text-zinc-500 uppercase">Specimen</div>
+                      <div className="font-mono font-bold text-xs text-zinc-200">Potato (184g)</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black border border-zinc-800">
+                      <div className="text-[9px] font-mono text-zinc-500 uppercase">Liquid Medium</div>
+                      <div className="font-mono font-bold text-xs text-zinc-200">Pure H₂O (1.00)</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black border border-zinc-800">
+                      <div className="text-[9px] font-mono text-zinc-500 uppercase">Velocity of Water</div>
+                      <div className="font-mono font-bold text-xs text-cyan-400">4.82 m/s</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black border border-zinc-800">
+                      <div className="text-[9px] font-mono text-zinc-500 uppercase">Usefulness</div>
+                      <div className="font-mono font-bold text-xs text-red-400">0.00%</div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <button
+                      onClick={scrollToSimulator}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl btn-primary text-xs font-bold flex items-center justify-center gap-2 shadow-xl hover:scale-105 transition-all"
+                    >
+                      <span>🧪 Launch Custom Simulator</span>
+                      <span>→</span>
+                    </button>
+                    {onOpenCert && (
+                      <button
+                        onClick={onOpenCert}
+                        className="w-full sm:w-auto px-5 py-3 rounded-xl btn-secondary text-xs font-mono flex items-center justify-center gap-2 hover:border-zinc-500 transition-all"
+                      >
+                        <span>📜 Claim Certificate</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={restartSequence}
+                      className="w-full sm:w-auto px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
+                      title="Replay from beginning"
+                    >
+                      <span>🔄 Replay</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* BOTTOM HUD: SCROLL GUIDANCE (CLEAN & CENTERED) */}
+            <div className="relative z-20 pb-8 px-4 sm:px-8 max-w-7xl mx-auto w-full flex items-center justify-center pointer-events-auto">
+              <div className="flex items-center gap-2.5 font-mono text-xs text-zinc-400 bg-zinc-950/80 px-5 py-2.5 rounded-full border border-zinc-800 backdrop-blur-md shadow-xl">
+                <div className="w-4 h-6 rounded-full border border-zinc-700 flex items-start justify-center p-0.5 bg-black">
+                  <div className="w-1 h-1.5 bg-white rounded-full animate-bounce"></div>
+                </div>
+                <span>{scrollProgress < 0.95 ? 'SCROLL DOWN TO ANIMATE DROP' : 'CONTINUE DOWN FOR FEATURES ↓'}</span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 3. "WHAT DOES IT DO?" SECTION
+    // ==========================================
+    function WhatItDoesSection() {
+      const cards = [
+        {
+          step: "01",
+          tag: "DROP",
+          title: "Select an Object",
+          icon: "🎯",
+          desc: "Choose from an organic potato, a 24k gold ingot, a sports ball, or a tactical rubber duck with custom physics dimensions."
+        },
+        {
+          step: "02",
+          tag: "SIMULATE",
+          title: "Compute Displacement",
+          icon: "🌊",
+          desc: "The fluid physics model calculates immersion volume, gravity trajectory, and splash loss in milliseconds."
+        },
+        {
+          step: "03",
+          tag: "MEASURE",
+          title: "Exact Volumetrics",
+          icon: "📊",
+          desc: "Receive exact milliliter readouts to 14 decimal places with 99.9% confidence and 0% practical application."
+        }
+      ];
+
+      return (
+        <section id="what-it-does" className="py-20 relative bg-zinc-950/60 border-y border-zinc-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Heading */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono">
+                FUNCTIONALITY EXPLAINED
+              </div>
+              <h2 className="font-heading font-bold text-2xl sm:text-4xl text-white tracking-tight">
+                What does this magnificent tool <span className="text-zinc-400">actually do?</span>
+              </h2>
+              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                When an object enters water, it pushes water out of the way. Our software calculates the exact displaced liquid and presents the result with an impressive amount of confidence.
+              </p>
+            </div>
+
+            {/* 3 Step Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {cards.map((card, idx) => (
+                <div
+                  key={idx}
+                  className="relative lab-panel rounded-2xl p-6 flex flex-col justify-between lab-panel-hover"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner">
+                        {card.icon}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded font-mono text-[11px] font-bold text-zinc-400 bg-zinc-900 border border-zinc-800">
+                          STEP {card.step}
+                        </span>
+                        <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold text-white bg-zinc-800 border border-zinc-700 tracking-wider uppercase">
+                          {card.tag}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="font-heading font-bold text-lg text-white mb-2">
+                      {card.title}
+                    </h3>
+                    <p className="text-zinc-400 text-xs leading-relaxed">
+                      {card.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-3 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+                    <span>STATE: READY</span>
+                    <a href="#simulator" className="text-zinc-300 hover:text-white">TRY SIMULATOR →</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 4. HOW IT WORKS TIMELINE SECTION
+    // ==========================================
+    function HowItWorksSection() {
+      const steps = [
+        {
+          number: "01",
+          title: "Select Specimen",
+          desc: "Choose tubers, waterfowl, solid gold, or flagship smartphones.",
+          icon: "🥔"
+        },
+        {
+          number: "02",
+          title: "Calibrate Physics",
+          desc: "Adjust radius, drop altitude, and containment fluid density.",
+          icon: "📏"
+        },
+        {
+          number: "03",
+          title: "Engage Drop",
+          desc: "Execute gravitational acceleration into simulated liquid.",
+          icon: "⬇️"
+        },
+        {
+          number: "04",
+          title: "Calculate Fluid",
+          desc: "Archimedean displacement calculations run in under 12ms.",
+          icon: "⚡"
+        },
+        {
+          number: "05",
+          title: "Audit Score",
+          desc: "Receive exact mL readout and an official useless certificate.",
+          icon: "📜"
+        }
+      ];
+
+      return (
+        <section id="how-it-works" className="py-20 relative bg-black">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono">
+                THE 5-STEP PROTOCOL
+              </div>
+              <h2 className="font-heading font-bold text-2xl sm:text-4xl text-white">
+                How It Works <span className="text-zinc-500 font-normal">(Protocol Overview)</span>
+              </h2>
+              <p className="text-zinc-400 text-sm">
+                Five simple steps between you and knowing how much water a potato pushes out of a bowl.
+              </p>
+            </div>
+
+            {/* Timeline Steps */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {steps.map((step, idx) => (
+                <div
+                  key={idx}
+                  className="lab-panel rounded-2xl p-5 flex flex-col justify-between lab-panel-hover"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-mono font-bold text-xs text-white px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                        STEP {step.number}
+                      </span>
+                      <span className="text-xl">{step.icon}</span>
+                    </div>
+
+                    <h3 className="font-heading font-bold text-base text-white mb-1.5">
+                      {step.title}
+                    </h3>
+                    <p className="text-zinc-400 text-xs leading-relaxed">
+                      {step.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-zinc-800 flex items-center text-[10px] font-mono text-zinc-500">
+                    <span>PHASE 0{idx + 1} READY</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 5. HIGH-REALISM CANVAS FLUID SIMULATOR
+    // ==========================================
+    function SimulatorSection({ onCertificateRequest }) {
+      const [selectedSpecimen, setSelectedSpecimen] = useState(SPECIMENS[0]);
+      const [radius, setRadius] = useState(SPECIMENS[0].defaultRadiusCm);
+      const [dropHeight, setDropHeight] = useState(80); // cm
+      const [liquid, setLiquid] = useState(LIQUID_TYPES[0]);
+      
+      // Simulation Run State
+      const [isDropping, setIsDropping] = useState(false);
+      const [hasDropped, setHasDropped] = useState(false);
+      const [showReport, setShowReport] = useState(false);
+      const [certCountdown, setCertCountdown] = useState(null);
+      const countdownTimerRef = useRef(null);
+
+      // Animated Telemetry Display Numbers (0 at start, animate on drop)
+      const [displayDisplaced, setDisplayDisplaced] = useState(0);
+      const [displayUsefulness, setDisplayUsefulness] = useState(0);
+      const [displayWaterVelocity, setDisplayWaterVelocity] = useState(0);
+
+      const canvasRef = useRef(null);
+      const animFrameRef = useRef(null);
+      const counterAnimRef = useRef(null);
+
+      // Simulation Internal Physics State Refs
+      const simStateRef = useRef({
+        running: false,
+        phase: 'idle', // 'idle', 'falling', 'submerged'
+        object: {
+          x: 250,
+          y: 35,
+          vy: 0,
+          radiusPx: 24,
+          icon: '🥔',
+          density: 1.08,
+          shape: 'organic',
+          submerged: false,
+          settled: false,
+        },
+        springs: [], // Array of water surface vertices
+        particles: [], // Water droplet splash fountain
+        splashRings: [], // Expanding surface wave ripples
+        bubbles: [], // Underwater air bubbles
+        baseWaterY: 220, // Baseline water level
+        targetWaterY: 220, // Rises when water is displaced
+        basinWidth: 320,
+        basinHeight: 150,
+        basinX: 90,
+        basinY: 170,
+        liquidViscosity: 0.025,
+        liquidColor: 'rgba(255, 255, 255, 0.14)',
+        waveColor: '#ffffff'
+      });
+
+      // Volumetric & Mass Calculations
+      const volumeMl = useMemo(() => {
+        const r = parseFloat(radius);
+        let vol = 0;
+        if (selectedSpecimen.shape === 'cube') {
+          vol = Math.pow(r * 1.6, 3);
+        } else if (selectedSpecimen.shape === 'cylinder') {
+          vol = Math.PI * Math.pow(r, 2) * (r * 2.2);
+        } else {
+          vol = (4 / 3) * Math.PI * Math.pow(r, 3);
+        }
+        return vol;
+      }, [radius, selectedSpecimen]);
+
+      const massGrams = useMemo(() => {
+        return volumeMl * selectedSpecimen.density;
+      }, [volumeMl, selectedSpecimen]);
+
+      const submergedRatio = useMemo(() => {
+        const relDensity = selectedSpecimen.density / liquid.density;
+        if (relDensity >= 1.0) return 1.0;
+        return Math.max(0.15, relDensity);
+      }, [selectedSpecimen, liquid]);
+
+      const displacedMl = useMemo(() => {
+        return volumeMl * submergedRatio;
+      }, [volumeMl, submergedRatio]);
+
+      const splashLossMl = useMemo(() => {
+        const kineticE = (selectedSpecimen.density * volumeMl) * (dropHeight / 100);
+        return Math.min(displacedMl * 0.35, (kineticE * 0.03));
+      }, [selectedSpecimen, volumeMl, dropHeight, displacedMl]);
+
+      const waterVelocity = useMemo(() => {
+        const impactV = Math.sqrt(2 * 9.80665 * (dropHeight / 100));
+        const densityFactor = Math.min(2.0, 0.75 + 0.25 * Math.sqrt(selectedSpecimen.density / liquid.density));
+        return impactV * densityFactor;
+      }, [dropHeight, selectedSpecimen, liquid]);
+
+      // Initialize Water Springs Surface
+      const initSprings = useCallback((baseY) => {
+        const numSprings = 48;
+        const width = 320;
+        const startX = 90;
+        const springs = [];
+        for (let i = 0; i < numSprings; i++) {
+          springs.push({
+            x: startX + (i / (numSprings - 1)) * width,
+            y: baseY,
+            targetY: baseY,
+            vy: 0
+          });
+        }
+        return springs;
+      }, []);
+
+      // Start animated digital ticker from 0 to calculated values
+      const animateMetricsCountUp = useCallback((targetDisplaced, targetUsefulness, targetVelocity) => {
+        if (counterAnimRef.current) cancelAnimationFrame(counterAnimRef.current);
+        const startTime = performance.now();
+        const duration = 900; // ms
+
+        const step = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          // Smooth ease-out cubic
+          const ease = 1 - Math.pow(1 - progress, 3);
+
+          setDisplayDisplaced(targetDisplaced * ease);
+          setDisplayUsefulness(targetUsefulness * ease);
+          setDisplayWaterVelocity(targetVelocity * ease);
+
+          if (progress < 1) {
+            counterAnimRef.current = requestAnimationFrame(step);
+          } else {
+            setDisplayDisplaced(targetDisplaced);
+            setDisplayUsefulness(targetUsefulness);
+            setDisplayWaterVelocity(targetVelocity);
+          }
+        };
+
+        counterAnimRef.current = requestAnimationFrame(step);
+      }, []);
+
+      // Internal Physics and Live Parameters Ref
+      const paramsRef = useRef({
+        selectedSpecimen,
+        radius,
+        dropHeight,
+        liquid,
+        volumeMl,
+        displacedMl,
+        waterVelocity,
+        animateMetricsCountUp
+      });
+
+      useEffect(() => {
+        paramsRef.current = {
+          selectedSpecimen,
+          radius,
+          dropHeight,
+          liquid,
+          volumeMl,
+          displacedMl,
+          waterVelocity,
+          animateMetricsCountUp
+        };
+      }, [selectedSpecimen, radius, dropHeight, liquid, volumeMl, displacedMl, waterVelocity, animateMetricsCountUp]);
+
+      // Reset Simulator Function
+      const resetSimulator = useCallback(() => {
+        setIsDropping(false);
+        setHasDropped(false);
+        setShowReport(false);
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        setCertCountdown(null);
+
+        if (counterAnimRef.current) cancelAnimationFrame(counterAnimRef.current);
+        setDisplayDisplaced(0);
+        setDisplayUsefulness(0);
+        setDisplayWaterVelocity(0);
+
+        const s = simStateRef.current;
+        s.phase = 'idle';
+        s.baseWaterY = 220;
+        s.targetWaterY = 220;
+        s.springs = initSprings(220);
+        s.particles = [];
+        s.splashRings = [];
+        s.bubbles = [];
+        s.liquidViscosity = liquid.visc;
+        s.liquidColor = liquid.color;
+        s.waveColor = liquid.waveColor;
+
+        const startY = Math.max(25, 175 - (dropHeight * 1.0));
+        s.object = {
+          x: 250,
+          y: startY,
+          vy: 0,
+          radiusPx: Math.max(14, Math.min(42, radius * 3.6)),
+          icon: selectedSpecimen.icon,
+          density: selectedSpecimen.density,
+          shape: selectedSpecimen.shape,
+          submerged: false,
+          settled: false,
+        };
+      }, [dropHeight, radius, selectedSpecimen, liquid, initSprings]);
+
+      // Update simulator state when controls change while idle
+      useEffect(() => {
+        if (!isDropping && !hasDropped) {
+          resetSimulator();
+        }
+      }, [selectedSpecimen, radius, dropHeight, liquid, isDropping, hasDropped, resetSimulator]);
+
+      // Main Canvas Render & Physics Loop (Runs continuously without tear-down interruptions)
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let active = true;
+
+        resetSimulator();
+
+        const updatePhysics = () => {
+          const s = simStateRef.current;
+          const pRef = paramsRef.current;
+          const k = 0.035; // spring constant
+          const d = 0.028 + (s.liquidViscosity || 0.025); // damping factor
+          const spread = 0.25; // wave neighbor spread
+
+          // 1. Update Water Springs
+          s.springs.forEach((sp) => {
+            const dy = sp.y - sp.targetY;
+            const force = -k * dy - d * sp.vy;
+            sp.vy += force;
+            sp.y += sp.vy;
+          });
+
+          // Wave propagation passes (Spring chain interaction)
+          const numSprings = s.springs.length;
+          for (let p = 0; p < 8; p++) {
+            const leftDeltas = new Array(numSprings).fill(0);
+            const rightDeltas = new Array(numSprings).fill(0);
+
+            for (let i = 0; i < numSprings; i++) {
+              if (i > 0) {
+                leftDeltas[i] = spread * (s.springs[i].y - s.springs[i - 1].y);
+                s.springs[i - 1].vy += leftDeltas[i];
+              }
+              if (i < numSprings - 1) {
+                rightDeltas[i] = spread * (s.springs[i].y - s.springs[i + 1].y);
+                s.springs[i + 1].vy += rightDeltas[i];
+              }
+            }
+
+            for (let i = 0; i < numSprings; i++) {
+              if (i > 0) s.springs[i - 1].y += leftDeltas[i];
+              if (i < numSprings - 1) s.springs[i + 1].y += rightDeltas[i];
+            }
+          }
+
+          // Smoothly raise target water level as displacement takes effect
+          s.springs.forEach((sp) => {
+            sp.targetY += (s.targetWaterY - sp.targetY) * 0.05;
+          });
+
+          // 2. Object Physics & Weight-Scaled Splash Dynamics
+          const obj = s.object;
+          const centerIdx = Math.floor(numSprings / 2);
+          const waterCurrentY = s.springs[centerIdx] ? s.springs[centerIdx].y : s.baseWaterY;
+
+          if (s.phase === 'falling') {
+            obj.vy += 0.58; // gravitational acceleration
+            obj.y += obj.vy;
+
+            // Check impact with water surface
+            if (obj.y + obj.radiusPx >= waterCurrentY) {
+              s.phase = 'submerged';
+              obj.submerged = true;
+
+              // Calculate Exact Mass in Grams and Weight Factor
+              const curVol = pRef.volumeMl;
+              const curSpecimen = pRef.selectedSpecimen;
+              const totalMassGrams = curVol * curSpecimen.density;
+              const weightFactor = Math.max(0.45, Math.min(5.5, Math.pow(totalMassGrams / 280, 0.65)));
+              const impactSpeed = obj.vy;
+
+              // Realistic Surface Cavity Impulse
+              const kineticImpulse = Math.min(32, (impactSpeed * 1.1) * Math.pow(weightFactor, 0.65));
+              const impactSpread = Math.min(12, Math.floor(4 + weightFactor * 1.1));
+              for (let i = -impactSpread; i <= impactSpread; i++) {
+                const idx = centerIdx + i;
+                if (idx >= 0 && idx < numSprings) {
+                  const distWeight = Math.cos((i / (impactSpread + 1)) * (Math.PI / 2));
+                  s.springs[idx].vy += kineticImpulse * distWeight * 0.88;
+                }
+              }
+
+              // Sound FX Scaled to Impact Energy & Realistic Specimen Acoustics
+              sound.playSpecimenDrop(curSpecimen.id, {
+                weightFactor,
+                impactSpeed,
+                radius: pRef.radius,
+                liquid: pRef.liquid,
+                volumeMl: curVol
+              });
+
+              // 1. Concentric Surface Ripple Waves
+              s.splashRings = [
+                { x: obj.x, y: waterCurrentY, radius: 4, maxRadius: obj.radiusPx * 1.8 + 12, alpha: 0.9, speed: 2.0 },
+                { x: obj.x, y: waterCurrentY, radius: 2, maxRadius: obj.radiusPx * 2.4 + 22, alpha: 0.7, speed: 1.4 },
+                { x: obj.x, y: waterCurrentY, radius: 1, maxRadius: obj.radiusPx * 3.0 + 32, alpha: 0.5, speed: 0.9 }
+              ];
+
+              // 2. Realistic Fluid Splash Droplets (Dual Symmetrical Crown Wings + Worthington Jet)
+              const crownCount = Math.floor(18 + weightFactor * 10);
+              const crownSpeedMult = Math.min(2.0, 0.85 + Math.pow(weightFactor, 0.35));
+
+              // Left Crown Spray (Outward parabolic arc to the left)
+              for (let i = 0; i < crownCount; i++) {
+                const rimOffset = obj.radiusPx * (0.25 + Math.random() * 0.70);
+                const angle = -1.85 + (Math.random() - 0.5) * 0.45; // ~ -106 deg
+                const spd = (4.0 + Math.random() * (impactSpeed * 0.45 + 3.5)) * crownSpeedMult;
+                s.particles.push({
+                  x: obj.x - rimOffset,
+                  y: waterCurrentY - 4,
+                  vx: Math.cos(angle) * spd,
+                  vy: Math.sin(angle) * spd,
+                  size: Math.random() * 2.2 + 2.0,
+                  alpha: 1.0,
+                  life: 1.0,
+                  gravity: 0.28
+                });
+              }
+
+              // Right Crown Spray (Outward parabolic arc to the right)
+              for (let i = 0; i < crownCount; i++) {
+                const rimOffset = obj.radiusPx * (0.25 + Math.random() * 0.70);
+                const angle = -1.29 + (Math.random() - 0.5) * 0.45; // ~ -74 deg
+                const spd = (4.0 + Math.random() * (impactSpeed * 0.45 + 3.5)) * crownSpeedMult;
+                s.particles.push({
+                  x: obj.x + rimOffset,
+                  y: waterCurrentY - 4,
+                  vx: Math.cos(angle) * spd,
+                  vy: Math.sin(angle) * spd,
+                  size: Math.random() * 2.2 + 2.0,
+                  alpha: 1.0,
+                  life: 1.0,
+                  gravity: 0.28
+                });
+              }
+
+              // Central Worthington Jet (Vertical Rebound Column)
+              const jetCount = Math.floor(14 + weightFactor * 8);
+              for (let i = 0; i < jetCount; i++) {
+                const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.08; // straight vertical
+                const spd = (5.5 + Math.random() * (impactSpeed * 0.55 + 4.5)) * crownSpeedMult;
+                s.particles.push({
+                  x: obj.x + (Math.random() - 0.5) * 8,
+                  y: waterCurrentY - 6,
+                  vx: Math.cos(angle) * spd,
+                  vy: Math.sin(angle) * spd,
+                  size: Math.random() * 2.6 + 2.4,
+                  alpha: 1.0,
+                  life: 1.0,
+                  gravity: 0.30
+                });
+              }
+
+              // Ambient Micro-Mist Spray
+              const mistCount = Math.floor(16 + weightFactor * 8);
+              for (let i = 0; i < mistCount; i++) {
+                const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.5;
+                const spd = (2.0 + Math.random() * 4.0) * crownSpeedMult;
+                s.particles.push({
+                  x: obj.x + (Math.random() - 0.5) * (obj.radiusPx * 1.2),
+                  y: waterCurrentY - 2,
+                  vx: Math.cos(angle) * spd,
+                  vy: Math.sin(angle) * spd,
+                  size: Math.random() * 1.2 + 1.2,
+                  alpha: 0.85,
+                  life: 0.8,
+                  gravity: 0.24
+                });
+              }
+
+              // Underwater Air Bubbles
+              const bubbleCount = Math.floor(Math.min(30, 6 * weightFactor + 6));
+              for (let i = 0; i < bubbleCount; i++) {
+                s.bubbles.push({
+                  x: obj.x + (Math.random() - 0.5) * (obj.radiusPx * 1.3),
+                  y: waterCurrentY + 8 + Math.random() * (20 + weightFactor * 6),
+                  vx: (Math.random() - 0.5) * (1.2 + weightFactor * 0.2),
+                  vy: -Math.random() * 2.0 - 0.5,
+                  size: Math.random() * 3.5 + 1.4,
+                  alpha: 0.85
+                });
+              }
+
+              // Rise baseline water level to accommodate displacement
+              const targetRise = Math.min(48, Math.max(10, (pRef.displacedMl / 500) * 44));
+              s.targetWaterY = 220 - targetRise;
+
+              // Trigger animated digital ticker countdown/up on impact
+              pRef.animateMetricsCountUp(
+                pRef.displacedMl,
+                100 - curSpecimen.uselessnessScore,
+                pRef.waterVelocity
+              );
+            }
+          } else if (s.phase === 'submerged') {
+            const curLiq = pRef.liquid;
+            const relDensity = obj.density / curLiq.density;
+            const fluidDrag = 0.86 - (s.liquidViscosity || 0.025) * 0.5;
+
+            if (relDensity >= 1.0) {
+              // Sinking Dense Object
+              const bottomY = 300 - obj.radiusPx;
+              if (obj.y < bottomY) {
+                obj.vy += (obj.density - curLiq.density) * 0.12;
+                obj.vy *= fluidDrag;
+                obj.y += obj.vy;
+              } else {
+                obj.y = bottomY;
+                obj.vy = 0;
+                obj.settled = true;
+              }
+            } else {
+              // Floating Buoyant Object
+              const equilibriumY = waterCurrentY + (obj.radiusPx * (relDensity * 1.5 - 0.75));
+              const springToEq = (equilibriumY - obj.y) * 0.08;
+              obj.vy += springToEq;
+              obj.vy *= fluidDrag;
+              obj.y += obj.vy;
+
+              if (Math.abs(obj.vy) < 0.08 && Math.abs(equilibriumY - obj.y) < 1.0) {
+                obj.settled = true;
+              }
+            }
+          }
+
+          // 3. Update Splash Droplet Particles
+          for (let i = s.particles.length - 1; i >= 0; i--) {
+            const p = s.particles[i];
+            p.vx *= 0.992; // fluid air drag
+            p.vy += p.gravity;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.0075; // smooth ~2.2s flight
+            p.alpha = Math.max(0, Math.min(1, p.life * 1.4));
+
+            // Check surface contact at droplet's horizontal position
+            const relX = (p.x - 90) / 320;
+            const spIdx = Math.max(0, Math.min(numSprings - 1, Math.floor(relX * numSprings)));
+            const localWaterY = s.springs[spIdx] ? s.springs[spIdx].y : s.baseWaterY;
+
+            if (p.y >= localWaterY && p.vy > 0 && p.y > 180) {
+              if (s.springs[spIdx]) {
+                s.springs[spIdx].vy += Math.min(3, p.vy * 0.08);
+              }
+              s.particles.splice(i, 1);
+            } else if (p.life <= 0 || p.y > 330 || p.x < 50 || p.x > 450) {
+              s.particles.splice(i, 1);
+            }
+          }
+
+          // 4. Update Surface Splash Wave Rings
+          for (let i = s.splashRings.length - 1; i >= 0; i--) {
+            const r = s.splashRings[i];
+            r.radius += r.speed;
+            r.alpha -= 0.018;
+            if (r.alpha <= 0 || r.radius >= r.maxRadius) {
+              s.splashRings.splice(i, 1);
+            }
+          }
+
+          // 5. Update Underwater Bubbles
+          for (let i = s.bubbles.length - 1; i >= 0; i--) {
+            const b = s.bubbles[i];
+            b.x += b.vx + Math.sin(Date.now() * 0.01 + i) * 0.2;
+            b.y += b.vy;
+            if (b.y <= waterCurrentY) {
+              s.bubbles.splice(i, 1);
+            }
+          }
+        };
+
+        const renderCanvas = () => {
+          ctx.clearRect(0, 0, 500, 320);
+          const s = simStateRef.current;
+          const pRef = paramsRef.current;
+          const numSprings = s.springs.length;
+          if (numSprings === 0) return;
+
+          // Background Guide Grid & Measurement Scale
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+          ctx.lineWidth = 1;
+          for (let y = 60; y <= 280; y += 40) {
+            ctx.beginPath();
+            ctx.setLineDash([4, 6]);
+            ctx.moveTo(90, y);
+            ctx.lineTo(410, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+
+          // Altitude Drop Marker
+          const dropMarkerY = Math.max(25, 175 - (pRef.dropHeight * 1.0));
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          ctx.moveTo(90, dropMarkerY);
+          ctx.lineTo(410, dropMarkerY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.font = '9px "JetBrains Mono", monospace';
+          ctx.fillText(`ALTITUDE ${pRef.dropHeight}cm`, 320, dropMarkerY - 4);
+
+          // Render Chamber Glass Basin Contour
+          ctx.strokeStyle = '#3f3f46';
+          ctx.lineWidth = 2;
+          ctx.fillStyle = '#09090b';
+          ctx.beginPath();
+          ctx.roundRect(90, 170, 320, 140, [0, 0, 48, 48]);
+          ctx.fill();
+          ctx.stroke();
+
+          // Render Underwater Bubbles
+          s.bubbles.forEach((b) => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${b.alpha})`;
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          // Render Submerged / Dropping Object
+          const obj = s.object;
+          ctx.save();
+          ctx.font = `${Math.floor(obj.radiusPx * 1.8)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(obj.icon, obj.x, obj.y);
+          ctx.restore();
+
+          // Render Dynamic Fluid Body & Surface Spline
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(s.springs[0].x, s.springs[0].y);
+
+          for (let i = 0; i < numSprings - 1; i++) {
+            const p0 = s.springs[i];
+            const p1 = s.springs[i + 1];
+            const xc = (p0.x + p1.x) / 2;
+            const yc = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, xc, yc);
+          }
+          ctx.lineTo(s.springs[numSprings - 1].x, s.springs[numSprings - 1].y);
+          ctx.lineTo(410, 310);
+          ctx.lineTo(90, 310);
+          ctx.closePath();
+
+          // Fluid Fill Gradient
+          const fluidGrad = ctx.createLinearGradient(0, 170, 0, 310);
+          fluidGrad.addColorStop(0, pRef.liquid.color || s.liquidColor);
+          fluidGrad.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
+          ctx.fillStyle = fluidGrad;
+          ctx.fill();
+
+          // Fluid Surface Line Glow
+          ctx.strokeStyle = pRef.liquid.waveColor || s.waveColor;
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.moveTo(s.springs[0].x, s.springs[0].y);
+          for (let i = 0; i < numSprings - 1; i++) {
+            const p0 = s.springs[i];
+            const p1 = s.springs[i + 1];
+            const xc = (p0.x + p1.x) / 2;
+            const yc = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, xc, yc);
+          }
+          ctx.lineTo(s.springs[numSprings - 1].x, s.springs[numSprings - 1].y);
+          ctx.stroke();
+          ctx.restore();
+
+          // Render Surface Splash Wave Rings
+          const centerWaterY = s.springs[Math.floor(numSprings / 2)].y;
+          s.splashRings.forEach((ring) => {
+            ctx.save();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${ring.alpha * 0.8})`;
+            ctx.lineWidth = 2.0;
+            ctx.beginPath();
+            ctx.ellipse(ring.x, centerWaterY, ring.radius, ring.radius * 0.22, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          });
+
+          // Render High-Contrast Water Droplets (Glossy, 3D Pearl Spheres)
+          s.particles.forEach((p) => {
+            ctx.save();
+            
+            // 1. Subtle Glow Shadow
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+            ctx.shadowBlur = 4;
+
+            // 2. Main Water Bead Body
+            ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.95})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3. 3D Specular Highlight / Pearl Reflection
+            if (p.size > 2.0) {
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+              ctx.beginPath();
+              ctx.arc(p.x - p.size * 0.3, p.y - p.size * 0.3, p.size * 0.35, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            // 4. Soft Liquid Teardrop Elongation in Flight
+            if (Math.abs(p.vy) > 1.8 && p.size > 1.6) {
+              const speed = Math.hypot(p.vx, p.vy);
+              if (speed > 0.1) {
+                const angle = Math.atan2(p.vy, p.vx);
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.45})`;
+                ctx.beginPath();
+                ctx.ellipse(
+                  p.x - (p.vx / speed) * p.size * 0.5,
+                  p.y - (p.vy / speed) * p.size * 0.5,
+                  p.size * 0.7,
+                  p.size * 1.25,
+                  angle - Math.PI / 2,
+                  0,
+                  Math.PI * 2
+                );
+                ctx.fill();
+              }
+            }
+            ctx.restore();
+          });
+        };
+
+        const tick = () => {
+          if (!active) return;
+          updatePhysics();
+          renderCanvas();
+          animFrameRef.current = requestAnimationFrame(tick);
+        };
+
+        animFrameRef.current = requestAnimationFrame(tick);
+
+        return () => {
+          active = false;
+          if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+          if (counterAnimRef.current) cancelAnimationFrame(counterAnimRef.current);
+        };
+      }, [initSprings, resetSimulator]);
+
+      // Trigger Object Drop
+      const handleDrop = () => {
+        if (isDropping) return;
+        setIsDropping(true);
+        setHasDropped(false);
+        setShowReport(false);
+
+        // Reset display metrics to 0 before count-up starts on impact
+        setDisplayDisplaced(0);
+        setDisplayUsefulness(0);
+        setDisplayWaterVelocity(0);
+
+        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+        setCertCountdown(null);
+
+        sound.playFaahDrop();
+        const s = simStateRef.current;
+        s.phase = 'falling';
+        s.baseWaterY = 220;
+        s.targetWaterY = 220;
+        s.springs = initSprings(220);
+        s.particles = [];
+        s.splashRings = [];
+        s.bubbles = [];
+        s.object.submerged = false;
+        s.object.settled = false;
+        s.object.vy = 0;
+        s.object.y = Math.max(25, 175 - (dropHeight * 1.0));
+
+        setTimeout(() => {
+          setIsDropping(false);
+          setHasDropped(true);
+          setShowReport(true);
+          setCertCountdown(3);
+
+          let remaining = 3;
+          if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = setInterval(() => {
+            remaining -= 1;
+            setCertCountdown(remaining);
+            if (remaining <= 0) {
+              clearInterval(countdownTimerRef.current);
+              if (onCertificateRequest) {
+                onCertificateRequest({
+                  specimen: selectedSpecimen,
+                  displacedMl: displacedMl.toFixed(1),
+                  usefulness: (100 - selectedSpecimen.uselessnessScore).toFixed(1),
+                  waterVelocity: waterVelocity.toFixed(2),
+                  liquidName: liquid.name,
+                  liquidDensity: liquid.density,
+                  radiusCm: radius,
+                  dropHeightCm: dropHeight,
+                  massGrams: massGrams.toFixed(1),
+                  splashLossMl: splashLossMl.toFixed(1),
+                  buoyantForceN: ((displacedMl / 1000) * liquid.density * 9.81).toFixed(2),
+                  submergedRatioPercent: (submergedRatio * 100).toFixed(0)
+                });
+              }
+            }
+          }, 1000);
+        }, 1100);
+      };
+
+      const requestCertManual = () => {
+        if (onCertificateRequest) {
+          onCertificateRequest({
+            specimen: selectedSpecimen,
+            displacedMl: displacedMl.toFixed(1),
+            usefulness: (100 - selectedSpecimen.uselessnessScore).toFixed(1),
+            waterVelocity: waterVelocity.toFixed(2),
+            liquidName: liquid.name,
+            liquidDensity: liquid.density,
+            radiusCm: radius,
+            dropHeightCm: dropHeight,
+            massGrams: massGrams.toFixed(1),
+            splashLossMl: splashLossMl.toFixed(1),
+            buoyantForceN: ((displacedMl / 1000) * liquid.density * 9.81).toFixed(2),
+            submergedRatioPercent: (submergedRatio * 100).toFixed(0)
+          });
+        }
+      };
+
+      return (
+        <section id="simulator" className="py-24 relative bg-zinc-950/80 border-y border-zinc-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            
+            {/* Heading */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                <span>INTERACTIVE FLUID DYNAMICS ENGINE</span>
+              </div>
+              <h2 className="font-heading font-black text-3xl sm:text-5xl text-white tracking-tight">
+                THE ACTUAL SIMULATOR
+              </h2>
+              <p className="text-zinc-400 text-sm">
+                Weight-proportional splash fountains, dynamic water surface tension, Hooke's law wave ripples, and real-time telemetry ticker.
+              </p>
+            </div>
+
+            {/* Main Simulator Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* Left Column: Controls */}
+              <div className="lg:col-span-5 space-y-5">
+                
+                {/* Object Selection Panel */}
+                <div className="lab-panel rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                    <span className="font-heading font-bold text-white text-sm">
+                      1. Select Specimen
+                    </span>
+                    <span className="font-mono text-xs text-zinc-300">
+                      {selectedSpecimen.shortName} ({massGrams >= 1000 ? (massGrams/1000).toFixed(2) + ' kg' : massGrams.toFixed(0) + ' g'})
+                    </span>
+                  </div>
+
+                  {/* Specimen Buttons Grid */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {SPECIMENS.map((spec) => {
+                      const active = selectedSpecimen.id === spec.id;
+                      return (
+                        <button
+                          key={spec.id}
+                          onClick={() => {
+                            setSelectedSpecimen(spec);
+                            setRadius(spec.defaultRadiusCm);
+                          }}
+                          className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
+                            active
+                              ? 'bg-zinc-800 border border-white text-white'
+                              : 'bg-black border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                          }`}
+                        >
+                          <span className="text-xl">{spec.icon}</span>
+                          <span className="text-[10px] font-mono truncate max-w-full font-medium">
+                            {spec.shortName}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Specimen Info */}
+                  <div className="p-3 rounded-xl bg-black border border-zinc-800 text-xs font-mono space-y-1">
+                    <div className="flex justify-between text-zinc-400">
+                      <span>MASS: {massGrams >= 1000 ? (massGrams/1000).toFixed(2) + ' kg' : massGrams.toFixed(0) + ' g'} (ρ = {selectedSpecimen.density})</span>
+                      <span className={selectedSpecimen.density > liquid.density ? 'text-zinc-200' : 'text-zinc-300'}>
+                        {selectedSpecimen.density > liquid.density ? '⚓ SINKS' : '🪶 FLOATS'}
+                      </span>
+                    </div>
+                    <p className="text-zinc-300 italic pt-0.5 font-sans text-xs">
+                      “{selectedSpecimen.funFact}”
+                    </p>
+                  </div>
+                </div>
+
+                {/* Physics Sliders Panel */}
+                <div className="lab-panel rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                    <span className="font-heading font-bold text-white text-sm">
+                      2. Calibrate Parameters
+                    </span>
+                    <span className="font-mono text-xs text-zinc-500">PHYSICS ENGINE</span>
+                  </div>
+
+                  {/* Radius Slider */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-mono">
+                      <span className="text-zinc-400">OBJECT RADIUS</span>
+                      <span className="text-zinc-200 font-medium">{radius} cm</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1.5"
+                      max="12.0"
+                      step="0.1"
+                      value={radius}
+                      disabled={isDropping}
+                      onChange={(e) => setRadius(parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-black rounded-lg appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
+
+                  {/* Drop Height Slider */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-mono">
+                      <span className="text-zinc-400">DROP ALTITUDE</span>
+                      <span className="text-zinc-200 font-medium">{dropHeight} cm</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="20"
+                      max="150"
+                      step="5"
+                      value={dropHeight}
+                      disabled={isDropping}
+                      onChange={(e) => setDropHeight(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-black rounded-lg appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
+
+                  {/* Liquid Selector */}
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-mono text-zinc-400 block">CONTAINMENT LIQUID</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {LIQUID_TYPES.map((liq) => (
+                        <button
+                          key={liq.id}
+                          onClick={() => {
+                            setLiquid(liq);
+                          }}
+                          className={`px-2.5 py-2 rounded-lg text-xs font-mono text-left transition-all border ${
+                            liquid.id === liq.id
+                              ? 'bg-zinc-800 border-white text-white font-medium'
+                              : 'bg-black border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          <div className="truncate text-[11px] font-semibold">{liq.name}</div>
+                          <div className="text-[10px] text-zinc-500">ρ = {liq.density} g/cm³</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column: Live Physics Chamber & Telemetry */}
+              <div className="lg:col-span-7 space-y-5">
+                
+                {/* Physical Tank Viewport */}
+                <div className="lab-panel rounded-2xl p-5">
+                  
+                  {/* Chamber Top Status Bar */}
+                  <div className="flex items-center justify-between font-mono text-xs pb-3 border-b border-zinc-800">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${isDropping ? 'bg-zinc-400 animate-pulse' : hasDropped ? 'bg-white' : 'bg-zinc-600'}`}></span>
+                      <span className="text-zinc-300">
+                        {isDropping ? 'CALCULATING SPLASH VECTORS...' : hasDropped ? 'DISPLACEMENT CONFIRMED' : 'CHAMBER ARMED & READY'}
+                      </span>
+                    </div>
+                    <span className="text-zinc-500">REALTIME 2D FLUID CANVAS</span>
+                  </div>
+
+                  {/* Dynamic HTML5 Canvas Physics Viewport */}
+                  <div className="relative my-3 bg-black rounded-xl border border-zinc-800 overflow-hidden flex items-center justify-center p-1">
+                    
+                    <canvas
+                      ref={canvasRef}
+                      width={500}
+                      height={320}
+                      className="w-full h-auto max-h-80 block"
+                    />
+
+                    {/* Displacement Callout Overlay Tag */}
+                    {hasDropped && (
+                      <div className="absolute top-4 right-4 bg-zinc-900/90 border border-zinc-700 px-3 py-1.5 rounded-lg font-mono text-xs text-white shadow-xl flex items-center gap-2 animate-fade-in">
+                        <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                        <span>+{displayDisplaced.toFixed(1)} mL WATER DISPLACED</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Simulator Action Controls */}
+                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                    <button
+                      onClick={handleDrop}
+                      disabled={isDropping}
+                      className="w-full sm:flex-1 py-3.5 rounded-xl btn-primary font-heading font-black text-base flex items-center justify-center gap-2 disabled:opacity-50 tracking-wide"
+                    >
+                      <span>DROP SPECIMEN</span>
+                      <span>💧</span>
+                    </button>
+
+                    <button
+                      onClick={resetSimulator}
+                      disabled={isDropping}
+                      className="w-full sm:w-auto px-5 py-3.5 rounded-xl btn-secondary font-mono text-xs"
+                    >
+                      RESET ↺
+                    </button>
+                  </div>
+                </div>
+
+                {/* Instant Real-Time Telemetry Cards (Starts at 0, Animated Count-Up on Drop) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  
+                  {/* Card 1: Water Displaced */}
+                  <div className="lab-panel rounded-xl p-3.5 border border-zinc-800">
+                    <div className="text-[10px] font-mono text-zinc-500 uppercase">Water Displaced</div>
+                    <div className="font-heading font-black text-2xl text-white mt-0.5 tracking-tight">
+                      {displayDisplaced.toFixed(1)} <span className="text-xs font-normal text-zinc-400">mL</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                      Exact: {displayDisplaced.toFixed(4)} mL
+                    </div>
+                  </div>
+
+                  {/* Card 2: Practical Usefulness */}
+                  <div className="lab-panel rounded-xl p-3.5 border border-zinc-800">
+                    <div className="text-[10px] font-mono text-zinc-500 uppercase">Usefulness Rating</div>
+                    <div className="font-heading font-black text-2xl text-zinc-200 mt-0.5 tracking-tight">
+                      {displayUsefulness.toFixed(1)}%
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                      {displayUsefulness === 0 && !hasDropped ? 'Status: Standby' : 'Status: Pointless'}
+                    </div>
+                  </div>
+
+                  {/* Card 3: Velocity of Water */}
+                  <div className="lab-panel rounded-xl p-3.5 border border-zinc-800">
+                    <div className="text-[10px] font-mono text-zinc-500 uppercase">Velocity of Water</div>
+                    <div className="font-heading font-black text-2xl text-white mt-0.5 tracking-tight">
+                      {displayWaterVelocity.toFixed(2)} <span className="text-xs font-normal text-zinc-400">m/s</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                      {displayWaterVelocity === 0 && !hasDropped ? 'Fluid State: Calibrated' : `Hydro-Vector: ${(waterVelocity * 1.12).toFixed(2)} m/s peak`}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Post-Drop Verdict & Official Certificate Trigger with Countdown */}
+                {showReport && (
+                  <div className="lab-panel rounded-xl p-4 border border-zinc-700 bg-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
+                    <div className="space-y-0.5 text-center sm:text-left">
+                      <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                        <span className="text-base">🎉</span>
+                        <span className="font-heading font-bold text-white text-sm">
+                          Displacement Calculation Complete
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        Object: <strong className="text-zinc-200">{selectedSpecimen.name}</strong> • Displaced: <strong className="text-white">{displacedMl.toFixed(1)} mL</strong> • Splash Velocity: <strong className="text-cyan-300">{waterVelocity.toFixed(2)} m/s</strong>
+                      </p>
+                    </div>
+
+                    {certCountdown !== null && certCountdown > 0 ? (
+                      <div className="px-4 py-2.5 rounded-lg bg-zinc-950 border border-amber-500/40 text-amber-300 text-xs font-mono font-medium flex items-center gap-2 shadow-inner shrink-0">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                        <span>Certificate Available in {certCountdown}s</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={requestCertManual}
+                        className="px-4 py-2.5 rounded-lg btn-primary text-xs font-mono font-bold shrink-0 flex items-center gap-1.5 shadow-md hover:scale-105 transition-all"
+                      >
+                        <span>📜 Claim Certificate</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 6. USELESSNESS METER SECTION
+    // ==========================================
+    function UselessnessMeterSection() {
+      const percentage = 97.8;
+      const strokeDashoffset = 440 - (440 * percentage) / 100;
+
+      return (
+        <section id="uselessness-meter" className="py-20 relative bg-black">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              
+              {/* Left Column: Humorous Explainer */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-block px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono">
+                  HONEST METRICS & AUDIT
+                </div>
+                
+                <h2 className="font-heading font-bold text-3xl sm:text-4xl text-white tracking-tight leading-tight">
+                  How useless is this project?
+                </h2>
+
+                <p className="text-base sm:text-lg text-zinc-300 font-medium">
+                  “Congratulations. You have successfully used advanced technology to calculate something you could have measured with a cup.”
+                </p>
+
+                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
+                  In a world full of critical humanitarian challenges, we dedicated time to modeling the buoyant displacement of virtual potatoes in digital water bowls. We regret nothing.
+                </p>
+
+                {/* Telemetry Comparison Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
+                  <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                    <div className="text-xl font-heading font-bold text-white">99.9%</div>
+                    <div className="text-[11px] text-zinc-400 font-mono mt-0.5">Measuring Cup Superiority</div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                    <div className="text-xl font-heading font-bold text-zinc-300">9.9 / 10</div>
+                    <div className="text-[11px] text-zinc-400 font-mono mt-0.5">Overkill Coefficient</div>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                    <div className="text-xl font-heading font-bold text-zinc-400">-4.5 min</div>
+                    <div className="text-[11px] text-zinc-400 font-mono mt-0.5">Time Saved vs Doing Nothing</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column: Clean Circular Dial */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="relative w-72 h-72 rounded-2xl lab-panel p-5 flex flex-col items-center justify-center border border-zinc-800">
+                  
+                  {/* SVG Circular Progress Meter */}
+                  <div className="relative w-48 h-48 flex items-center justify-center">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r="70"
+                        className="text-zinc-800 stroke-current"
+                        strokeWidth="10"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r="70"
+                        className="text-white stroke-current"
+                        strokeWidth="10"
+                        strokeDasharray="440"
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        fill="transparent"
+                        style={{ transition: 'stroke-dashoffset 1.2s ease-out' }}
+                      />
+                    </svg>
+
+                    {/* Inside Text Readout */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="font-heading font-extrabold text-3xl text-white tracking-tight">
+                        97.8%
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-zinc-300 uppercase tracking-wider mt-0.5">
+                        USELESS
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                        (±0.2% Margin)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-center">
+                    <span className="text-[11px] font-mono text-zinc-500">
+                      AUDIT LEVEL: ABSOLUTE OVERKILL
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 7. SCIENCE & ARCHIMEDES SECTION
+    // ==========================================
+    function ScienceSection() {
+      const [viewState, setViewState] = useState('submerged');
+
+      return (
+        <section id="science" className="py-20 relative bg-zinc-950/60 border-t border-zinc-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono">
+                THE PHYSICAL TRUTH
+              </div>
+              <h2 className="font-heading font-bold text-2xl sm:text-4xl text-white">
+                Archimedes' Scientific Foundation
+              </h2>
+              <p className="text-zinc-400 text-sm">
+                When an object is submerged, it displaces fluid equal to the volume of the submerged portion of the object.
+              </p>
+            </div>
+
+            {/* Scientific Flow Container */}
+            <div className="lab-panel rounded-2xl p-6 space-y-8">
+              
+              {/* Step Sequence */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-center">
+                
+                {/* Node 1 */}
+                <div className="p-5 rounded-xl bg-black border border-zinc-800 flex flex-col items-center space-y-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-zinc-300 font-mono font-bold">
+                    01
+                  </div>
+                  <h4 className="font-heading font-semibold text-base text-white">Object Volume</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Total geometric 3D volume calculated via spherical, cuboid, or cylinder integration.
+                  </p>
+                  <div className="font-mono text-xs text-zinc-500 pt-1">V<sub>obj</sub> = f(r, h, shape)</div>
+                </div>
+
+                {/* Node 2 */}
+                <div className="p-5 rounded-xl bg-black border border-zinc-800 flex flex-col items-center space-y-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-white font-mono font-bold">
+                    02
+                  </div>
+                  <h4 className="font-heading font-semibold text-base text-white">Water Displacement</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Fluid exerts buoyant force F<sub>b</sub> = ρ V g. Submerged volume pushes liquid upward.
+                  </p>
+                  <div className="font-mono text-xs text-white pt-1">Δh = V<sub>sub</sub> / A<sub>bowl</sub></div>
+                </div>
+
+                {/* Node 3 */}
+                <div className="p-5 rounded-xl bg-black border border-zinc-800 flex flex-col items-center space-y-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-zinc-300 font-mono font-bold">
+                    03
+                  </div>
+                  <h4 className="font-heading font-semibold text-base text-white">Estimated Volume</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Calibrated sensor readout formatted in milliliters, accompanied by unnecessary UI telemetry.
+                  </p>
+                  <div className="font-mono text-xs text-zinc-500 pt-1">Output: 184.200 mL</div>
+                </div>
+
+              </div>
+
+              {/* Visual Interactive Toggle Chamber */}
+              <div className="p-5 rounded-xl bg-black border border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-6">
+                
+                {/* Visual State Graphic */}
+                <div className="flex-1 flex justify-center">
+                  <div className="relative w-56 h-36 rounded-b-2xl border border-zinc-700 bg-zinc-950 overflow-hidden flex flex-col justify-end p-2">
+                    
+                    {/* Water */}
+                    <div
+                      className="w-full bg-white/15 border-t border-white/40 transition-all duration-300 relative flex items-center justify-center"
+                      style={{ height: viewState === 'submerged' ? '80px' : '50px' }}
+                    >
+                      {viewState === 'submerged' && (
+                        <div className="font-mono text-[9px] text-white font-semibold">
+                          +35mm DISPLACED
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Object */}
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 transition-all duration-300"
+                      style={{
+                        bottom: viewState === 'submerged' ? '30px' : '90px'
+                      }}
+                    >
+                      <span className="text-3xl">🥔</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* State Explainer & Toggle */}
+                <div className="flex-1 space-y-3 text-center md:text-left">
+                  <div className="space-y-1">
+                    <span className="text-xs font-mono text-zinc-500 uppercase">Diagram Mode</span>
+                    <h4 className="font-heading font-semibold text-lg text-white">
+                      {viewState === 'submerged' ? 'State B: Submerged Immersion' : 'State A: Baseline Equilibrium'}
+                    </h4>
+                    <p className="text-zinc-400 text-xs leading-relaxed">
+                      {viewState === 'submerged'
+                        ? 'The potato occupies chamber volume, displacing water molecules upward into the visible measurement zone.'
+                        : 'Baseline water level prior to specimen immersion. Fluid surface remains at rest.'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <button
+                      onClick={() => {
+                        setViewState('dry');
+                        sound.playScanBeep();
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${
+                        viewState === 'dry'
+                          ? 'btn-primary'
+                          : 'btn-secondary'
+                      }`}
+                    >
+                      Baseline (Dry)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setViewState('submerged');
+                        sound.playSplashHighTech();
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${
+                        viewState === 'submerged'
+                          ? 'btn-primary'
+                          : 'btn-secondary'
+                      }`}
+                    >
+                      Submerged (Displaced)
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 8. SPECIMEN BENCHMARK RECORDS
+    // ==========================================
+    function SpecimenBenchmarks() {
+      const benchmarkCards = [
+        {
+          name: "Potato",
+          icon: "🥔",
+          volume: "184 mL",
+          usefulness: "Questionable",
+          tag: "Carb Overkill",
+          comment: "Displaces water with quiet dignity. Still requires peeling afterwards."
+        },
+        {
+          name: "Toy Duck",
+          icon: "🦆",
+          volume: "92 mL",
+          usefulness: "Questionable",
+          tag: "Buoyant Squeak",
+          comment: "Refuses to sink, complicating the mathematical pride of our algorithms."
+        },
+        {
+          name: "Football",
+          icon: "⚽",
+          volume: "523 mL",
+          usefulness: "0.7%",
+          tag: "Athletic Void",
+          comment: "Contains mostly air; causes significant splash disturbance."
+        },
+        {
+          name: "Bowling Ball",
+          icon: "🎳",
+          volume: "5,340 mL",
+          usefulness: "Dangerous",
+          tag: "Chamber Hazard",
+          comment: "Displaces half the bowl onto the laboratory floor instantly."
+        },
+        {
+          name: "Smartphone",
+          icon: "📱",
+          volume: "85 mL",
+          usefulness: "Warranty Void",
+          tag: "Silicon Submersion",
+          comment: "Displaces 85mL of liquid; manufacturer warranty declined immediately."
+        },
+        {
+          name: "Gold Ingot",
+          icon: "🧱",
+          volume: "647 mL",
+          usefulness: "Historical",
+          tag: "Ancient Archimedes",
+          comment: "Directly solves King Hiero II's crown dispute from 250 BC."
+        }
+      ];
+
+      return (
+        <section id="benchmarks" className="py-20 relative bg-black border-t border-zinc-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono">
+                LAB BENCHMARK MATRIX
+              </div>
+              <h2 className="font-heading font-bold text-2xl sm:text-4xl text-white">
+                Curated Specimen Records
+              </h2>
+              <p className="text-zinc-400 text-sm">
+                Simulated laboratory benchmarks compiled across hundreds of pointless drops.
+              </p>
+            </div>
+
+            {/* Grid of Results */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {benchmarkCards.map((card, idx) => (
+                <div
+                  key={idx}
+                  className="lab-panel rounded-2xl p-5 flex flex-col justify-between lab-panel-hover"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{card.icon}</span>
+                        <div>
+                          <h3 className="font-heading font-semibold text-base text-white">
+                            {card.name}
+                          </h3>
+                          <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                            {card.tag}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-black border border-zinc-800 text-zinc-400">
+                        REF #{idx + 101}
+                      </span>
+                    </div>
+
+                    <div className="my-3 p-3 rounded-xl bg-black border border-zinc-800 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs font-mono">
+                        <span className="text-zinc-500">DISPLACED:</span>
+                        <span className="font-heading font-semibold text-white">{card.volume}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-mono">
+                        <span className="text-zinc-500">USEFULNESS:</span>
+                        <span className="text-zinc-300">{card.usefulness}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-zinc-400 text-xs leading-relaxed italic">
+                      “{card.comment}”
+                    </p>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-zinc-800 flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-zinc-500">VERIFIED USELESS</span>
+                    <a
+                      href="#simulator"
+                      onClick={() => sound.playScanBeep()}
+                      className="text-xs font-mono text-zinc-300 hover:text-white font-medium flex items-center gap-1"
+                    >
+                      <span>TEST IN SIM</span>
+                      <span>→</span>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+      );
+    }
+
+    // ==========================================
+    // 9. OFFICIAL POINTLESS CERTIFICATE MODAL
+    // ==========================================
+    // ==========================================
+    // 9. OFFICIAL POINTLESS CERTIFICATE MODAL
+    // ==========================================
+    function CertificateModal({ data, onClose }) {
+      if (!data) return null;
+
+      const [isHacked, setIsHacked] = useState(false);
+      const [hackedCountdown, setHackedCountdown] = useState(6);
+      const [celebrateClicks, setCelebrateClicks] = useState(0);
+      const celebrateResetTimerRef = useRef(null);
+
+      const triggerModalConfetti = () => {
+        if (window.confetti) {
+          window.confetti({
+            particleCount: 90,
+            spread: 75,
+            origin: { y: 0.6 },
+            colors: ['#fbbf24', '#f59e0b', '#000000', '#71717a', '#27272a']
+          });
+        }
+      };
+
+      useEffect(() => {
+        triggerModalConfetti();
+        return () => {
+          if (celebrateResetTimerRef.current) {
+            clearTimeout(celebrateResetTimerRef.current);
+          }
+        };
+      }, []);
+
+      // Hacked Screen Lockdown Countdown Timer
+      useEffect(() => {
+        if (!isHacked) return;
+
+        const interval = setInterval(() => {
+          setHackedCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              setTimeout(() => {
+                setIsHacked(false);
+                onClose();
+              }, 600);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }, [isHacked, onClose]);
+
+      const serialNum = useMemo(() => {
+        return Math.floor(Math.random() * 899999 + 100000);
+      }, []);
+
+      const currentDate = useMemo(() => {
+        return new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }, []);
+
+      // SWAPPED BUTTON FUNCTIONS:
+      // 1. "Celebrate" closes the interface ONLY after 30 continuous clicks
+      const handleCelebrateClick = () => {
+        triggerModalConfetti();
+
+        if (celebrateResetTimerRef.current) {
+          clearTimeout(celebrateResetTimerRef.current);
+        }
+
+        setCelebrateClicks((prev) => {
+          const nextCount = prev + 1;
+          if (nextCount >= 30) {
+            if (window.confetti) {
+              window.confetti({
+                particleCount: 200,
+                spread: 120,
+                origin: { y: 0.5 },
+                colors: ['#fbbf24', '#f59e0b', '#ec4899', '#f43f5e', '#ffffff']
+              });
+            }
+            setTimeout(() => {
+              onClose();
+            }, 350);
+            return 30;
+          }
+
+          // Reset counter if idle for 3s to enforce *continuous* clicking
+          celebrateResetTimerRef.current = setTimeout(() => {
+            setCelebrateClicks(0);
+          }, 3000);
+
+          return nextCount;
+        });
+      };
+
+      // 2. "Dismiss" now triggers the prank HACKED lockdown screen and plays laugh.mp3
+      const handleDismissClick = () => {
+        sound.playLaugh();
+        setIsHacked(true);
+        setHackedCountdown(6);
+      };
+
+      // Format detail fields with fallback defaults
+      const radiusDisplay = data.radiusCm ? `${data.radiusCm} cm` : `${data.specimen.defaultRadiusCm || 3.5} cm`;
+      const dropHeightDisplay = data.dropHeightCm ? `${data.dropHeightCm} cm` : '80 cm';
+      const massDisplay = data.massGrams ? `${data.massGrams} g` : '184.2 g';
+      const waterVelocityDisplay = data.waterVelocity ? `${data.waterVelocity} m/s` : '3.96 m/s';
+      const buoyantForceDisplay = data.buoyantForceN ? `${data.buoyantForceN} N` : '1.81 N';
+      const splashLossDisplay = data.splashLossMl ? `${data.splashLossMl} mL` : '5.8 mL';
+      const liquidDensityDisplay = data.liquidDensity ? `ρ = ${data.liquidDensity} g/cm³` : 'ρ = 1.00 g/cm³';
+      const submersionDisplay = data.submergedRatioPercent ? `${data.submergedRatioPercent}%` : (data.specimen.density >= 1.0 ? '100%' : `${Math.round(data.specimen.density * 100)}%`);
+
+      return (
+        <>
+          {/* MAIN CERTIFICATE MODAL */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+            {/* Certificate Container with White Paper Sheet Aesthetic */}
+            <div className="relative w-full max-w-2xl bg-white rounded-2xl p-3 sm:p-4 shadow-2xl border border-zinc-200 my-auto text-zinc-900 animate-fade-in max-h-[94vh] overflow-y-auto">
+              
+              {/* Outer Decorative Certificate Border */}
+              <div className="relative border-2 border-zinc-900 p-5 sm:p-8 bg-[#fdfdfb] rounded-xl overflow-hidden shadow-sm">
+                
+                {/* Corner Minimal Clean Accents */}
+                <div className="absolute top-2.5 left-2.5 text-zinc-400 text-xs font-mono select-none">⌜</div>
+                <div className="absolute top-2.5 right-2.5 text-zinc-400 text-xs font-mono select-none">⌝</div>
+                <div className="absolute bottom-2.5 left-2.5 text-zinc-400 text-xs font-mono select-none">⌞</div>
+                <div className="absolute bottom-2.5 right-2.5 text-zinc-400 text-xs font-mono select-none">⌟</div>
+
+                {/* Fine Inner Hairline Inset */}
+                <div className="absolute inset-3 border border-zinc-200 pointer-events-none rounded-lg"></div>
+
+                {/* Close Button (Also triggers the hacked prank when attempting to close) */}
+                <button
+                  onClick={handleDismissClick}
+                  className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-black rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 transition-colors z-20"
+                  title="Close Certificate"
+                >
+                  ✕
+                </button>
+
+                {/* Certificate Header */}
+                <div className="text-center space-y-1 relative z-10 pt-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700 text-[10px] font-mono tracking-widest uppercase font-semibold">
+                    <span>★ TINKERHUB FOUNDATION • HACKATHON 2026 ★</span>
+                  </div>
+                  
+                  <h2 className="font-heading font-black text-2xl sm:text-3xl text-zinc-950 tracking-tight pt-1 uppercase">
+                    CERTIFICATE OF OFFICIAL DISPLACEMENT
+                  </h2>
+                  
+                  <p className="font-sans text-xs text-zinc-500 font-medium tracking-wider uppercase">
+                    Verified Unnecessary Liquid Volumetrics
+                  </p>
+                  <div className="w-20 h-0.5 bg-zinc-950 mx-auto mt-1.5"></div>
+                </div>
+
+                {/* Certificate Body */}
+                <div className="my-4 text-center space-y-3 relative z-10">
+                  <p className="text-xs text-zinc-500 font-sans">
+                    This scientific document certifies the empirical submersion calibration of:
+                  </p>
+
+                  {/* Specimen Profile Badge */}
+                  <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-200 shadow-sm">
+                    <span className="text-3xl">{data.specimen.icon}</span>
+                    <div className="text-left">
+                      <div className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">TESTED SPECIMEN</div>
+                      <div className="font-heading font-bold text-base text-zinc-950">
+                        {data.specimen.name}
+                      </div>
+                      <div className="text-[10px] font-mono text-zinc-500">
+                        Density: ρ = {data.specimen.density} g/cm³ • Shape: {data.specimen.shape || 'Organic'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Volume Callout */}
+                  <div className="py-1">
+                    <div className="font-heading font-black text-4xl sm:text-5xl text-zinc-950 tracking-tight">
+                      {data.displacedMl} <span className="text-2xl sm:text-3xl text-zinc-500 font-bold">mL</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider font-semibold">
+                      TOTAL FLUID DISPLACED
+                    </span>
+                  </div>
+
+                  {/* Comprehensive Telemetry & Physics Breakdown Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-left font-mono text-[11px] pt-1">
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">VELOCITY OF WATER</span>
+                      <span className="font-heading font-bold text-cyan-800 text-xs">{waterVelocityDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">SPECIMEN MASS</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{massDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">OBJECT RADIUS</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{radiusDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">DROP ALTITUDE</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{dropHeightDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">CONTAINMENT FLUID</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs truncate">{data.liquidName || 'Standard H₂O'}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">FLUID DENSITY</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{liquidDensityDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">BUOYANT FORCE</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{buoyantForceDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">SPLASH LOSS</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{splashLossDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">SUBMERSION RATIO</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{submersionDisplay}</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <span className="text-zinc-400 block text-[8px] uppercase">USEFULNESS RATING</span>
+                      <span className="font-heading font-bold text-zinc-900 text-xs">{data.usefulness}% (Zero)</span>
+                    </div>
+                    <div className="col-span-2 p-2 rounded-lg bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                      <div>
+                        <span className="text-zinc-400 block text-[8px] uppercase">PROJECT CATEGORY</span>
+                        <span className="font-heading font-bold text-zinc-900 text-xs">Useless Projects • 1st Prize</span>
+                      </div>
+                      <span className="text-base">🏆</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Certificate Bottom: Issued Info, TinkerHub Gold Seal, and Signature */}
+                <div className="pt-3 border-t border-zinc-200 grid grid-cols-2 sm:grid-cols-3 items-center gap-3 relative z-10">
+                  
+                  {/* Left: Issued Date & Serial */}
+                  <div className="text-left font-mono text-[10px] text-zinc-600 space-y-0.5">
+                    <div className="text-zinc-400 uppercase text-[8px]">ISSUED DATE</div>
+                    <div className="text-zinc-900 font-medium">{currentDate}</div>
+                    <div className="text-zinc-400 text-[8px]">SERIAL: TH-JDI-2026-{serialNum}</div>
+                  </div>
+
+                  {/* Center: Official TinkerHub Gold Medallion Seal */}
+                  <div className="flex flex-col items-center justify-center col-span-2 sm:col-span-1 order-first sm:order-none">
+                    <div className="relative">
+                      {/* Golden Embossed Seal Disc */}
+                      <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-500 p-0.5 shadow-md shadow-amber-600/30 flex items-center justify-center">
+                        <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full text-amber-700/40">
+                          <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" fill="none" />
+                        </svg>
+                        <div className="w-full h-full rounded-full bg-gradient-to-b from-amber-400 to-amber-600 border border-amber-200 p-1 flex flex-col items-center justify-center text-center shadow-inner text-amber-950">
+                          <span className="text-[6px] font-mono tracking-widest font-black uppercase text-amber-950">
+                            ★ TINKERHUB ★
+                          </span>
+                          <div className="w-5 h-px bg-amber-800/40 my-0.5"></div>
+                          <span className="text-[8px] font-heading font-black uppercase tracking-wider text-amber-950">
+                            OFFICIAL
+                          </span>
+                          <span className="text-[5px] font-mono tracking-tighter uppercase font-bold text-amber-900">
+                            SEAL • 2026
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Seal Ribbons */}
+                      <div className="flex justify-center gap-1 -mt-1.5">
+                        <div className="w-3 h-5 bg-gradient-to-b from-red-600 to-red-800 shadow-md transform -rotate-6" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
+                        <div className="w-3 h-5 bg-gradient-to-b from-red-600 to-red-800 shadow-md transform rotate-6" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)' }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Signature Line */}
+                  <div className="text-right space-y-0.5">
+                    <div className="font-heading font-bold text-zinc-900 text-xs tracking-wide">
+                      TinkerHub Board
+                    </div>
+                    <div className="w-20 h-px bg-zinc-300 ml-auto my-0.5"></div>
+                    <div className="text-[8px] font-mono text-zinc-400 uppercase font-medium">AUTHORIZED SIGNATURE</div>
+                  </div>
+
+                </div>
+
+                {/* Action Buttons (Functions Swapped!) */}
+                <div className="flex items-center gap-2.5 pt-3 mt-3 border-t border-zinc-200 relative z-10">
+                  {/* CELEBRATE BUTTON: Requires 30 continuous clicks to close, cleanly disguised */}
+                  <button
+                    onClick={handleCelebrateClick}
+                    className="flex-1 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-heading font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    title="Celebrate & Close"
+                  >
+                    <span>🎉 Celebrate & Close</span>
+                  </button>
+
+                  {/* DISMISS BUTTON: Now triggers the prank HACKED lockdown screen */}
+                  <button
+                    onClick={handleDismissClick}
+                    className="px-6 py-2.5 rounded-xl bg-zinc-100 hover:bg-red-50 text-zinc-700 hover:text-red-700 border border-zinc-300 hover:border-red-300 font-mono text-xs transition-all font-medium active:scale-[0.98]"
+                    title="Attempting to dismiss triggers the security override"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          {/* FULLSCREEN HACKED & LOCKED SCREEN OVERLAY */}
+          {isHacked && (
+            <div className="fixed inset-0 z-[999999] bg-black/95 text-pink-500 font-mono flex flex-col justify-between p-4 sm:p-8 select-none hacked-scanlines overflow-hidden cursor-not-allowed animate-fade-in">
+              
+              {/* Top Alert Header */}
+              <div className="flex items-center justify-between border-b-2 border-pink-600/80 pb-3 bg-pink-950/40 p-4 rounded-xl backdrop-blur-md animate-strobe">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl animate-spin-slow">🌸</span>
+                  <div>
+                    <div className="text-xs text-pink-400 font-bold tracking-widest uppercase flex items-center gap-1.5">
+                      <span>✨</span> CRITICAL OVERRIDE // SCREEN LOCKED <span>✨</span>
+                    </div>
+                    <div className="text-sm font-black text-pink-300 animate-glitch">
+                      TACTICAL PROTOCOL: AGGRESSIVE_FLORAL_SHAME
+                    </div>
+                  </div>
+                </div>
+                <div className="px-3 py-1 bg-pink-500 text-black font-black text-xs rounded uppercase tracking-wider animate-pulse flex items-center gap-1">
+                  <span>🔒</span> LOCKED ({hackedCountdown}s)
+                </div>
+              </div>
+
+              {/* Main Center: Big 'you are useless' with Cringe Flowers on Top and Both Ends */}
+              <div className="max-w-5xl mx-auto w-full my-auto space-y-6 text-center">
+                
+                {/* 1. CRINGE FLOWERS DECORATION: TOP GARLAND */}
+                <div className="flex items-center justify-center gap-2 sm:gap-4 text-2xl sm:text-4xl md:text-5xl select-none animate-pulse">
+                  <span>🌸</span>
+                  <span>🌺</span>
+                  <span>🌼</span>
+                  <span>🌻</span>
+                  <span className="text-pink-300 text-lg sm:text-2xl animate-spin-slow">✨</span>
+                  <span>🌷</span>
+                  <span>💐</span>
+                  <span>🌹</span>
+                  <span>💐</span>
+                  <span>🌷</span>
+                  <span className="text-pink-300 text-lg sm:text-2xl animate-spin-slow">✨</span>
+                  <span>🌻</span>
+                  <span>🌼</span>
+                  <span>🌺</span>
+                  <span>🌸</span>
+                </div>
+
+                {/* 2. BIG FONTS 'YOU ARE USELESS' WITH CRINGE FLOWERS ON BOTH ENDS */}
+                <div className="flex items-center justify-center gap-3 sm:gap-6 md:gap-8 my-2">
+                  {/* Left End Cringe Flowers */}
+                  <div className="cringe-flower-left text-3xl sm:text-5xl md:text-7xl select-none shrink-0">
+                    <span>💐</span>
+                    <span>🌺</span>
+                    <span>🌸</span>
+                  </div>
+
+                  {/* Big Text */}
+                  <div className="text-center px-2">
+                    <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter uppercase font-heading text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-rose-300 to-amber-200 cringe-useless-text drop-shadow-[0_0_40px_rgba(244,63,94,0.95)] select-none leading-none">
+                      you are useless
+                    </h1>
+                  </div>
+
+                  {/* Right End Cringe Flowers */}
+                  <div className="cringe-flower-right text-3xl sm:text-5xl md:text-7xl select-none shrink-0">
+                    <span>🌸</span>
+                    <span>🌺</span>
+                    <span>💐</span>
+                  </div>
+                </div>
+
+                {/* Bottom Cringe Floral Banner & Subtitle */}
+                <div className="flex items-center justify-center gap-2 text-base sm:text-2xl select-none">
+                  <span>✨</span><span>🌸</span><span>🌷</span>
+                  <p className="text-xs sm:text-sm md:text-base font-bold text-pink-200/90 tracking-widest uppercase font-mono px-2">
+                    ~ 100% Certified Pointless Archimedean Specimen ~
+                  </p>
+                  <span>🌷</span><span>🌸</span><span>✨</span>
+                </div>
+
+                {/* Humorous Terminal Diagnostic Output */}
+                <div className="p-4 rounded-xl bg-black/90 border border-pink-500/50 shadow-[0_0_30px_rgba(236,72,153,0.25)] text-left text-xs font-mono space-y-1.5 overflow-hidden max-w-3xl mx-auto">
+                  <div className="text-pink-400 flex items-center justify-between border-b border-pink-900/60 pb-1 mb-2">
+                    <span>ROOT@FLORAL-MAINFRAME-CORE:~#</span>
+                    <span className="text-[10px] text-pink-400 font-bold">DISMISSAL INTERCEPTED</span>
+                  </div>
+                  <div className="text-pink-300">&gt; [DETECTION] User tried to dismiss official displacement certificate without celebrating.</div>
+                  <div className="text-rose-400">&gt; [EVALUATION] Fluid Displaced: {data.displacedMl} mL. Scientific usefulness: 0.000%.</div>
+                  <div className="text-pink-400">&gt; [DECORATION] Deploying ultra-cringe floral bouquets on both ends and top. [DEPLOYED]</div>
+                  <div className="text-amber-300 font-bold">&gt; [LOCKDOWN] Interface controls frozen for {hackedCountdown} seconds as penance.</div>
+                </div>
+
+                {/* Big Animated Lockdown Progress Box */}
+                <div className="p-4 sm:p-5 rounded-2xl border-2 border-pink-500 bg-pink-950/40 backdrop-blur-xl shadow-2xl space-y-3 max-w-3xl mx-auto">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                    <span className="text-pink-300 flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-pink-400 animate-ping"></span>
+                      SYSTEM UNLOCK PROGRESS
+                    </span>
+                    <span className="text-pink-400 font-black text-sm font-mono">
+                      {hackedCountdown > 0 ? `RELEASING IN ${hackedCountdown}s` : 'RELEASING CONTROLS...'}
+                    </span>
+                  </div>
+
+                  {/* Progress Meter */}
+                  <div className="w-full h-3 bg-black rounded-full overflow-hidden border border-pink-700/60 p-0.5">
+                    <div 
+                      className="h-full bg-gradient-to-r from-pink-600 via-rose-400 to-amber-300 rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.max(5, ((6 - hackedCountdown) / 6) * 100)}%` }}
+                    ></div>
+                  </div>
+
+                  <p className="text-[11px] text-pink-300/80 italic">
+                    💡 Tip: Next time, press the <strong>"Celebrate & Close"</strong> button to exit without being called useless by flowers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Security Readout Footer */}
+              <div className="flex items-center justify-between text-[11px] text-pink-500/80 border-t border-pink-900/60 pt-3">
+                <div className="flex items-center gap-1.5">
+                  <span>🌸</span>
+                  <span>TINKERHUB FLORAL DEFENSE CORE // PROTOCOL 2026</span>
+                  <span>🌸</span>
+                </div>
+                <div className="animate-pulse">ALL INPUTS TEMPORARILY LOCKED</div>
+              </div>
+
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // ==========================================
+    // 10. FOOTER COMPONENT
+    // ==========================================
+    function Footer() {
+      return (
+        <footer className="py-12 relative bg-black border-t border-zinc-800 text-zinc-400">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-zinc-900 items-start">
+              
+              {/* Brand Column */}
+              <div className="md:col-span-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">💧</span>
+                  <span className="font-heading font-bold text-base text-white tracking-wide">
+                    JUST DROP IT
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
+                  Built for Hackathon 2026. Because someone had to measure the unnecessary with total scientific precision.
+                </p>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400">
+                  <span>🏆 Useless Projects Category</span>
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div className="md:col-span-3 space-y-2">
+                <h4 className="font-heading font-semibold text-white text-xs uppercase tracking-wider">Navigation</h4>
+                <ul className="space-y-1.5 text-xs font-mono text-zinc-400">
+                  <li><a href="#hero" className="hover:text-white transition-colors">Top Chamber</a></li>
+                  <li><a href="#what-it-does" className="hover:text-white transition-colors">Features</a></li>
+                  <li><a href="#simulator" className="hover:text-white transition-colors">Interactive Simulator</a></li>
+                  <li><a href="#uselessness-meter" className="hover:text-white transition-colors">Uselessness Gauge</a></li>
+                  <li><a href="#science" className="hover:text-white transition-colors">Archimedes Theory</a></li>
+                </ul>
+              </div>
+
+              {/* Legal & Satire Disclaimer */}
+              <div className="md:col-span-4 space-y-2">
+                <h4 className="font-heading font-semibold text-white text-xs uppercase tracking-wider">Scientific Disclaimer</h4>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  No measuring cups or innocent potatoes were harmed during development. Patent pending across 0 jurisdictions worldwide.
+                </p>
+                <div className="font-mono text-[10px] text-zinc-600">
+                  © 2026 Just Drop It Labs. Completely Unnecessary.
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-500 gap-2">
+              <div>Designed with stark monochrome aesthetics & dry hackathon humor.</div>
+              <div className="flex items-center gap-4">
+                <a href="#hero" className="text-zinc-400 hover:text-white">Back to Top ↑</a>
+              </div>
+            </div>
+
+          </div>
+        </footer>
+      );
+    }
+
+    // ==========================================
+    // 11. MAIN APP ASSEMBLY
+    // ==========================================
+    function App() {
+      const [soundEnabled, setSoundEnabled] = useState(true);
+      const [certData, setCertData] = useState(null);
+
+      return (
+        <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-white selection:text-black">
+          {/* Navigation with Top Buttons */}
+          <Navbar 
+            soundEnabled={soundEnabled} 
+            setSoundEnabled={setSoundEnabled} 
+            onOpenCert={() => {
+              setCertData({
+                specimen: SPECIMENS[0],
+                displacedMl: "184.2",
+                usefulness: "0.0",
+                waterVelocity: "3.96",
+                liquidName: "Standard H₂O",
+                liquidDensity: 1.00,
+                radiusCm: 3.5,
+                dropHeightCm: 80,
+                massGrams: "198.9",
+                splashLossMl: "5.8",
+                buoyantForceN: "1.81",
+                submergedRatioPercent: "100"
+              });
+            }}
+          />
+
+          {/* 1. Hero Landing Section with Try Simulator Button */}
+          <HeroSection 
+            onOpenCert={() => {
+              setCertData({
+                specimen: SPECIMENS[0],
+                displacedMl: "184.2",
+                usefulness: "0.0",
+                waterVelocity: "3.96",
+                liquidName: "Standard H₂O",
+                liquidDensity: 1.00,
+                radiusCm: 3.5,
+                dropHeightCm: 80,
+                massGrams: "198.9",
+                splashLossMl: "5.8",
+                buoyantForceN: "1.81",
+                submergedRatioPercent: "100"
+              });
+            }}
+          />
+
+          {/* 2. What It Does */}
+          <WhatItDoesSection />
+
+          {/* 3. How It Works Timeline */}
+          <HowItWorksSection />
+
+          {/* 4. Interactive Simulator Chamber */}
+          <SimulatorSection onCertificateRequest={(data) => setCertData(data)} />
+
+          {/* 5. Uselessness Meter Audit */}
+          <UselessnessMeterSection />
+
+          {/* 6. Archimedes Science Section */}
+          <ScienceSection />
+
+          {/* 7. Specimen Benchmarks / Records */}
+          <SpecimenBenchmarks />
+
+          {/* 8. Footer */}
+          <Footer />
+
+          {/* Certificate Modal */}
+          {certData && (
+            <CertificateModal data={certData} onClose={() => setCertData(null)} />
+          )}
+        </div>
+      );
+    }
+
+    // Mount React Root
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
