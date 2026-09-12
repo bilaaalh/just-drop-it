@@ -52,8 +52,7 @@ This is where actual measuring happens.
 
 ### Project Demo
 # Video
-https://drive.google.com/file/d/142bx3VsqDymWwUyE-uwW2S4ItKM9m5sK/view?usp=sharing
-
+https://drive.google.com/file/d/1XO8EfMYBIUIAol3XZMEjPguJN-XtIXHK/view?usp=drive_link
 ---
 Made with ❤️ at TinkerHub Useless Projects 
 
