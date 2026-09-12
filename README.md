@@ -23,7 +23,6 @@ Measuring the details when an object is fell into water.
 For Software:
 - [HTML, CSS, JSON]
 - [Frameworks used]
-- [Libraries used]
 - [Anti Gravity]
 
 For Hardware:
