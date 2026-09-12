@@ -49,21 +49,7 @@ This shows what this project does.
 This is where actual measuring happens.
 
 # Diagrams
-![Workflow](Add your workflow/architecture diagram here)
-*Add caption explaining your workflow*
-
-For Hardware:
-
-
-# Schematic & Circuit
-![Circuit](Add your circuit diagram here)
-*Add caption explaining connections*
-
-![Schematic](Add your schematic diagram here)
-*Add caption explaining the schematic*
-
-![Final](Add photo of final product here)
-*Explain the final build*
+<img width="1312" height="1199" alt="workflow" src="https://github.com/user-attachments/assets/05053ae1-91c6-4639-aade-b458399b03fe" />
 
 ### Project Demo
 # Video
