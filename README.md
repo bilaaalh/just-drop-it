@@ -6,8 +6,8 @@
 
 
 ### Team Members
-- Member 1: Adhithyan T - Sree Narayana Guru College of Engineering & Technology Chalakode
-- Member 3: Bilal Khaleel - Sree Narayana Guru College of Engineering & Technology Chalakode
+- Member 1: Bilal Khaleel - Sree Narayana Guru College of Engineering & Technology Chalakode
+- Member 2: Adithyan T - Sree Narayana Guru College of Engineering & Technology Chalakode
 
 ### Project Description
 It shows the amount of water displaced when an object is dropped in water.
